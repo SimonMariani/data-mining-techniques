@@ -5,6 +5,8 @@ import time
 import pickle
 from torch.utils.data import Dataset, DataLoader, RandomSampler
 import torch
+import argparse
+import yaml
 
 def participant(row):
     person = int(row.id.split('.')[1])
@@ -23,6 +25,7 @@ def load_object(filename):
         object_file = pickle.load(input)
 
     return object_file
+
 
 def initial_processing(data):
     data['time'] = pd.to_datetime(data['time'], infer_datetime_format=True)
@@ -53,73 +56,113 @@ def mid_processing(data):
 
     return all_data
 
-def final_processing(data, type='mood', k=5, day_value='mean', nmbr_features=4):
-    """returns the data which is still sorted per person and per day but every day is now a data point instead
-    of a pandas dataframe."""
+def final_processing(data, window=5, day_value='mean', temporal=False):
+    """returns the data which is still sorted per person and per day but now every person is a pandas dataframe
+    with the number of days as index and the columns as features"""
 
-    #targets = []
-    #final_data = torch.zeros(size=(len(data), len(data[0]), nmbr_features))
+    all_types = data[0][0]['variable'].unique()
+    days = np.arange(len(data[0]))
+    new_data = [pd.DataFrame(index=days, columns=all_types) for person in data]
 
+    for i in range(len(data)):  # every person
+        for j in range(len(data[i])):  # every day for that person
+            for k, type in enumerate(all_types):  # every type for that day
+
+                # We take a subframe of all the values
+                all_vals = data[i][j].loc[data[i][j].variable == type]['value']
+
+                #  We can chose not to do this and impute the missing data points with for example knn
+                if (len(all_vals) == 0 and j != 0) or (all_vals.isnull().values.any() and j!=0):
+                    new_data[i][type].iloc[j] = 0
+                    continue
+                elif len(all_vals) == 0 or all_vals.isnull().values.any():
+                    new_data[i][type].iloc[j] = 0
+                    continue
+
+                # Decide what value we take from the current day
+                if day_value == 'mean':
+                    val = all_vals.mean()
+                elif day_value == 'max':
+                    val = all_vals.max()
+                elif day_value == 'min':
+                    val = all_vals.min()
+                else:
+                    val = all_vals.mean()
+
+                # Save the new value
+                new_data[i][type].iloc[j] = val
+
+    # For the non temporal dataset we add the moving averages
+    if not temporal:
+        new_data = moving_averages(new_data, window)
+    else:
+        return new_data
+
+    return new_data
+
+def moving_averages(data, window):
+
+    # We first identify all types of variables
+    all_types = data[0].columns
+
+    # We loop over the players and find the moving averages of every type
     for i in range(len(data)):
-        prev_vals = [0 for i in range(k)]
-        moving_average = 0
-        cumulative_average = 0
-        exponential_average = 0
+        for type in all_types:
+            moving_average, cumulative_average, exponential_average = get_moving_averages(data[i], window, type)
 
-        #targets_person = []
-        for j in range(len(data[i])):
-            all_vals = data[i][j].loc[data[i][j].variable == type]['value']
-
-            # If there is some data missing we simply set it to the preious mean
-            if len(all_vals) == 0:
-                data[i][j] = torch.Tensor([val, round(moving_average, 1), round(cumulative_average,1), round(exponential_average, 1)])
-                continue
-
-            # Decide what value we take from the current day
-            if day_value == 'mean':
-                val = all_vals.mean()
-            elif day_value == 'max':
-                val = all_vals.max()
-            elif day_value == 'min':
-                val = all_vals.min()
-            else:
-                val = all_vals.mean()
-
-            # First we take out the target
-            #targets_person.append(val)
-
-            # Append the new val and calculate the new average
-            prev_vals.append(val)
-
-            if j == 0:
-                exponential_average = val
-                cumulative_average = val
-                moving_average = val
-
-            elif j < k:
-                moving_average = (val + (j*moving_average)) / (j+1)
-                cumulative_average = (val + (j*cumulative_average)) / (j+1)
-                exponential_average = (1 - 2 / (j+1)) * exponential_average + 2 / (j+1) * val
-
-            elif j >= k:
-                moving_average += (val - prev_vals[0]) / k
-                cumulative_average = (val + (j*cumulative_average)) / (j+1)
-                exponential_average = (1 - 2 / (k+1)) * exponential_average + 2 / (k+1) * val
-
-            # Remove the last value
-            prev_vals.pop(0)
-
-            # Save all the new changes
-            data[i][j] = torch.Tensor([val, round(moving_average, 1), round(cumulative_average,1), round(exponential_average, 1)])
-
-        #targets.append(targets_person)
-
+            # initialize the columns of the dataframe
+            data[i][type + '_moving'] = moving_average
+            data[i][type + '_cumulative'] = cumulative_average
+            data[i][type + '_exponential'] = exponential_average
 
     return data
 
+def get_moving_averages(days, window, type):
+
+    # Variables to keep track of the moving averages
+    prev_vals = [0 for i in range(window)]
+    moving_average = cumulative_average = exponential_average = 0
+    all_moving_average = []
+    all_cumulative_average = []
+    all_exponential_average = []
+
+    # We loop over all the days and save the moving averages for each day
+    for j in range(len(days)):
+
+        # get the value belonging to the current day
+        val = days[type].iloc[j]
+
+        # Append the new val and calculate the new averages
+        prev_vals.append(val)
+
+        if j == 0:
+            exponential_average = val
+            cumulative_average = val
+            moving_average = val
+
+        elif j < window:
+            moving_average = (val + (j * moving_average)) / (j + 1)
+            cumulative_average = (val + (j * cumulative_average)) / (j + 1)
+            exponential_average = (1 - 2 / (j + 1)) * exponential_average + 2 / (j + 1) * val
+
+        elif j >= window:
+            moving_average += (val - prev_vals[0]) / window
+            cumulative_average = (val + (j * cumulative_average)) / (j + 1)
+            exponential_average = (1 - 2 / (window + 1)) * exponential_average + 2 / (window + 1) * val
+
+        # Remove the last value
+        prev_vals.pop(0)
+
+        # Save all the new changes
+        all_moving_average.append(moving_average)
+        all_cumulative_average.append(cumulative_average)
+        all_exponential_average.append(exponential_average)
+
+    return all_moving_average, all_cumulative_average, all_exponential_average
+
 class MOOD_loader(Dataset):
 
-    def __init__(self, root='processed_data.pkl', train=True):
+    def __init__(self, root='processed_data_temporal.pkl'):
 
         data, targets = self.load_data(root)
 
@@ -131,15 +174,19 @@ class MOOD_loader(Dataset):
         data = load_object(root)
 
         targets = []
-        for person in data:
-            targets_days = []
-            for i in range(len(person) - 1):  # note that we exclude the last datapoint here
-                targets_days.append(person[i + 1][0])  # the first element is always just the value
+        new_data = []
+        for i in range(len(data)):
+            target_days = []
+            data_days = []
 
-            targets.append(targets_days)
-            del person[-1]  # because we cannot predict the mood for the next dat on the last day
+            for j in range(len(data[i])-1):
+                target_days.append(torch.tensor(data[i].iloc[j+1]['mood']))
+                data_days.append(torch.tensor(data[i].iloc[j]))  # [['mood', 'mood_moving']]
 
-        return data, targets
+            new_data.append(data_days)
+            targets.append(target_days)
+
+        return new_data, targets
 
     def __len__(self):
         return len(self.data)
@@ -151,21 +198,32 @@ class MOOD_loader(Dataset):
 
         return sequence, targets
 
-def get_data(path='./dataset_mood_smartphone.csv'):
+def get_data(path='./dataset_mood_smartphone.csv', window=5, day_value='mean', temporal=True):
     """Returns the completely processed data given a path"""
     data = pd.read_csv(path, index_col=0)
     data = initial_processing(data)
     data = mid_processing(data)  # this drastically changes the shape of the data
-    data = final_processing(data, k=5, type='mood', day_value='mean')  # also changes the shape of the data
+    data = final_processing(data, window=window, day_value=day_value, temporal=temporal)  # also changes the shape of the data
 
-    save_object(data, 'processed_data.pkl')
+    if temporal:
+        save_object(data, 'processed_data_temporal.pkl')
+        data = load_object('processed_data_temporal.pkl')
+    else:
+        save_object(data, 'processed_data_features.pkl')
+        data = load_object('processed_data_features.pkl')
 
-    data = load_object('processed_data.pkl')
-
-    print(data[0][0:10])
+    print(data[0][0:10][:3])
     print(len(data))
-    #print(data[1][0][0:10])
+    print(len(data[0]))
 
 
 if __name__ == "__main__":
-    get_data()
+    # The arguments are determined by command line arguments and a .yml file
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', default='configuration.yml')
+
+    args = parser.parse_args()
+    config = yaml.load(open(args.config, "r"), yaml.SafeLoader)
+    config = {**config['dataset']}
+
+    get_data(config['path'], config['window'], config['day_value'], config['temporal'])

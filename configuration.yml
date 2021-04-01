@@ -5,8 +5,15 @@ LSTM:
   batch_size: 9
   hidden: 64
   layers: 2
-  in_dim: 4
+  in_dim: 17  # 68, 17
   out_dim: 10
   max_norm: 5
   device: 'cpu'
   seed: 42
+  data_path: 'processed_data_temporal.pkl'  # 'processed_data_features.pkl'  'processed_data_temporal.pkl'
+
+dataset:
+  path: './dataset_mood_smartphone.csv'
+  temporal: True
+  window: 5
+  day_value: 'mean'

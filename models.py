@@ -26,8 +26,3 @@ class Basic_LSTM(nn.Module):
         return x
 
 
-
-
-
-
-data = load_object('processed_data.pkl')

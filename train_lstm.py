@@ -10,8 +10,6 @@ import argparse
 import yaml
 
 
-
-
 def train(config):
     np.random.seed(config['seed'])
     torch.manual_seed(config['seed'])
@@ -20,7 +18,7 @@ def train(config):
     #device = torch.device(config.device)
 
     # Initialize the dataset and data loader
-    dataset = MOOD_loader()
+    dataset = MOOD_loader(root=config['data_path'])
     data_loader = DataLoader(dataset, config['batch_size'])  # batch size=9 means exactly 3 batches per epoch
 
     # Initialize the model that we are going to use
@@ -36,7 +34,6 @@ def train(config):
     count = 0
     for epoch in range(config['epochs']):
         for inputs, targets in data_loader:
-
             model.zero_grad()
 
             # send intputs to the device
@@ -44,8 +41,7 @@ def train(config):
             targets = torch.stack(targets)
 
             # Forward pass
-            log_probs = model(inputs)
-
+            log_probs = model(inputs.float())
             targets = targets.permute(1, 0)
             log_probs = log_probs.permute(1, 2, 0)
 
@@ -58,7 +54,6 @@ def train(config):
                                            max_norm=config['max_norm'])
             count += 1
 
-
         targets = targets.permute(1, 0)
         log_probs = log_probs.permute(2, 0, 1)
 
@@ -66,7 +61,7 @@ def train(config):
         targets = torch.round(targets)
 
         correct = (predictions == targets).sum().item()
-        accuracy = correct / (log_probs.size(0)*log_probs.size(1))
+        accuracy = correct / (log_probs.size(0) * log_probs.size(1))
 
         print(f'epoch: {epoch}')
         print(f'loss: {loss}')
