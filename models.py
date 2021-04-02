@@ -25,4 +25,19 @@ class Basic_LSTM(nn.Module):
 
         return x
 
+class Basic_Net(nn.Module):
+
+    def __init__(self, batch_size, lstm_num_hidden=64, lstm_num_layers=2,
+                 input_dim=4, output_dim=10, device='cuda:0'):
+        super(Basic_Net, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, output_dim),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.net(x)
 

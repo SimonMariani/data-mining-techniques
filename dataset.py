@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader, RandomSampler
 import torch
 import argparse
 import yaml
+from sklearn import preprocessing
 
 def participant(row):
     person = int(row.id.split('.')[1])
@@ -92,6 +93,9 @@ def final_processing(data, window=5, day_value='mean', temporal=False):
                 # Save the new value
                 new_data[i][type].iloc[j] = val
 
+        # Normalize the data w.r.t every person
+        new_data[i] = normalize(new_data[i], new_data[i].columns.drop(['mood']))
+
     # For the non temporal dataset we add the moving averages
     if not temporal:
         new_data = moving_averages(new_data, window)
@@ -160,6 +164,41 @@ def get_moving_averages(days, window, type):
 
     return all_moving_average, all_cumulative_average, all_exponential_average
 
+def normalize(data, columns):
+    x = data[columns].values.astype(float)
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled = min_max_scaler.fit_transform(x)
+    data[columns] = pd.DataFrame(x_scaled)
+    return data
+
+def save_temporal(data, filename='processed_data_temporal.pkl'):
+
+    targets = []
+    new_data = []
+    for i in range(len(data)):
+        target_days = []
+        data_days = []
+
+        for j in range(len(data[i]) - 1):
+            data_days.append(torch.tensor(data[i].iloc[j]))
+            target_days.append(torch.tensor(data[i].iloc[j + 1]['mood']))
+
+        new_data.append(data_days)
+        targets.append(target_days)
+
+    save_object((new_data, targets), filename)
+
+def save_features(data, filename='processed_data_features.pkl'):
+
+    targets = []
+    new_data = []
+    for i in range(len(data)):
+        for j in range(len(data[i]) - 1):
+            new_data.append(data[i].iloc[j].to_numpy().astype(float))
+            targets.append(float(data[i].iloc[j + 1]['mood']))
+
+    save_object((new_data, targets), filename)
+
 class MOOD_loader(Dataset):
 
     def __init__(self, root='processed_data_temporal.pkl'):
@@ -171,22 +210,8 @@ class MOOD_loader(Dataset):
         self.root = root
 
     def load_data(self, root):
-        data = load_object(root)
-
-        targets = []
-        new_data = []
-        for i in range(len(data)):
-            target_days = []
-            data_days = []
-
-            for j in range(len(data[i])-1):
-                target_days.append(torch.tensor(data[i].iloc[j+1]['mood']))
-                data_days.append(torch.tensor(data[i].iloc[j]))  # [['mood', 'mood_moving']]
-
-            new_data.append(data_days)
-            targets.append(target_days)
-
-        return new_data, targets
+        data, labels = load_object(root)
+        return data, labels
 
     def __len__(self):
         return len(self.data)
@@ -198,6 +223,7 @@ class MOOD_loader(Dataset):
 
         return sequence, targets
 
+
 def get_data(path='./dataset_mood_smartphone.csv', window=5, day_value='mean', temporal=True):
     """Returns the completely processed data given a path"""
     data = pd.read_csv(path, index_col=0)
@@ -206,15 +232,16 @@ def get_data(path='./dataset_mood_smartphone.csv', window=5, day_value='mean', t
     data = final_processing(data, window=window, day_value=day_value, temporal=temporal)  # also changes the shape of the data
 
     if temporal:
-        save_object(data, 'processed_data_temporal.pkl')
-        data = load_object('processed_data_temporal.pkl')
+        save_temporal(data)
+        data, labels = load_object('processed_data_temporal.pkl')
     else:
-        save_object(data, 'processed_data_features.pkl')
-        data = load_object('processed_data_features.pkl')
+        save_features(data)
+        data, labels = load_object('processed_data_features.pkl')
 
-    print(data[0][0:10][:3])
+    print(data[0:10])
     print(len(data))
     print(len(data[0]))
+    print(labels)
 
 
 if __name__ == "__main__":
