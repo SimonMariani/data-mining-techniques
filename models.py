@@ -35,7 +35,7 @@ class Basic_Net(nn.Module):
             nn.Linear(input_dim, 64),
             nn.ReLU(),
             nn.Linear(64, output_dim),
-            nn.Sigmoid()
+            nn.Softmax()
         )
 
     def forward(self, x):

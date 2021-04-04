@@ -1,10 +1,15 @@
-model: 'NN' # 'logistic' 'LSTM' 'svm' 'NN'
+model: 'all' # 'logistic' 'LSTM' 'svm' 'NN'
+nmbr_of_runs: 10
 
 logistic:
   data_path: 'processed_data_features.pkl'
+  seed: 4
+  print: False
 
 svm:
   data_path: 'processed_data_features.pkl'
+  seed: 4
+  print: False
 
 NN:
   epochs: 10
@@ -17,8 +22,9 @@ NN:
   out_dim: 10
   max_norm: 5
   device: 'cpu'
-  seed: 42
+  seed: 4
   data_path: 'processed_data_features.pkl'
+  print: False
 
 LSTM:
   epochs: 10
@@ -31,8 +37,9 @@ LSTM:
   out_dim: 10
   max_norm: 5
   device: 'cpu'
-  seed: 42
+  seed: 4
   data_path: 'processed_data_temporal.pkl'
+  print: False
 
 dataset:
   path: './dataset_mood_smartphone.csv'

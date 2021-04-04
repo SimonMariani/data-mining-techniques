@@ -1,13 +1,12 @@
 import pandas as pd
-from datetime import datetime
 import numpy as np
-import time
-import pickle
 from torch.utils.data import Dataset, DataLoader, RandomSampler
 import torch
 import argparse
 import yaml
 from sklearn import preprocessing
+from utils import save_object, load_object
+import random
 
 def participant(row):
     person = int(row.id.split('.')[1])
@@ -16,17 +15,6 @@ def participant(row):
 def day(row):
     day = row.time.day
     return day
-
-def save_object(obj, filename):
-    with open(filename, 'wb') as output:  # Overwrites any existing file.
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
-
-def load_object(filename):
-    with open(filename, 'rb') as input:
-        object_file = pickle.load(input)
-
-    return object_file
-
 
 def initial_processing(data):
     data['time'] = pd.to_datetime(data['time'], infer_datetime_format=True)
@@ -93,6 +81,9 @@ def final_processing(data, window=5, day_value='mean', temporal=False):
                 # Save the new value
                 new_data[i][type].iloc[j] = val
 
+        # Add manual features
+        new_data[i] = add_manual_features(new_data[i], data[i])
+
         # Normalize the data w.r.t every person
         new_data[i] = normalize(new_data[i], new_data[i].columns.drop(['mood']))
 
@@ -101,6 +92,12 @@ def final_processing(data, window=5, day_value='mean', temporal=False):
         new_data = moving_averages(new_data, window)
     else:
         return new_data
+
+    return new_data
+
+
+def add_manual_features(new_data, data):
+    """This method returns the data object with additional features"""
 
     return new_data
 
@@ -201,17 +198,30 @@ def save_features(data, filename='processed_data_features.pkl'):
 
 class MOOD_loader(Dataset):
 
-    def __init__(self, root='processed_data_temporal.pkl'):
+    def __init__(self, root='processed_data_temporal.pkl', train=True, split=0.8, shuffle=True):
 
-        data, targets = self.load_data(root)
+        self.load(root, train, split, shuffle)
+        self.root = root
+
+    def load(self, root, train, split, shuffle):
+        data, targets = load_object(root)
+
+        if shuffle:
+            temp = list(zip(data, targets))
+            random.shuffle(temp)
+            data, targets = zip(*temp)
+
+        split = int(split * len(data))
+
+        if train:
+            data = data[:split]
+            targets = targets[:split]
+        else:
+            data = data[split:]
+            targets = targets[split:]
 
         self.data = data
         self.targets = targets
-        self.root = root
-
-    def load_data(self, root):
-        data, labels = load_object(root)
-        return data, labels
 
     def __len__(self):
         return len(self.data)
