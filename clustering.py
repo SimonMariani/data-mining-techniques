@@ -71,7 +71,7 @@ def plot_clusters(data):
     labels = np.unique(data["Cluster"])
     cols = data.shape[1] - 1
     for c in range(1, cols):
-        plt.subplot(4, 4, c)
+        plt.subplot(4, 5, c) # changed it from 4, 4 -> 4, 5
         for i in labels:
             plt.scatter(data[data["Cluster"] == i][c], data[data["Cluster"] == i][0])
     plt.legend(labels)
@@ -89,11 +89,16 @@ def summarize_clusters(data):
 def main():
     np.random.seed(1234)
     pd.set_option('max_columns', None)
+
     aggregated_participants = aggregate_participants_by_mean()
     k_opt_elbow = perform_elbow_method(aggregated_participants)
     k_opt_silhouette = calculate_silhouette(aggregated_participants)
-    print("Silhouette k: ", k_opt_silhouette)
-    clustered_data = cluster_by_kmeans(k_opt_silhouette, aggregated_participants)
+    print(k_opt_silhouette)
+    print(k_opt_elbow)
+    print("Silhouette k: ", k_opt_elbow)
+
+    clustered_data = cluster_by_kmeans(k_opt_elbow, aggregated_participants)
+
     plot_clusters(clustered_data)
     summarize_clusters(clustered_data)
 

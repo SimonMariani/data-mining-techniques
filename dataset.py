@@ -5,9 +5,9 @@ import torch
 import argparse
 import yaml
 from sklearn import preprocessing
-from utils import save_object, load_object, participant, day, moving_averages
+from utils import save_object, load_object, participant, day
 import random
-from utils import add_tsfresh_participant, add_tsfresh_day, add_weather_data
+from utils import moving_averages, add_tsfresh_participant, add_tsfresh_day, add_weather_data, add_day_specifics
 
 
 def add_columns(data):
@@ -95,21 +95,30 @@ def impute(data):
 def add_features(new_data, data, config):
     """This method returns the data object with additional features such as the moving averages"""
 
-    #new_data = moving_averages(new_data, window=window)
+    #new_data = moving_averages(new_data, window=5)
     #new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
     #new_data = add_tsfresh_day(new_data, data, config['tsfresh_features'], columns=config['columns'])
-    new_data = add_weather_data(new_data, data)
+    #new_data = add_weather_data(new_data, data)
+    new_data = add_day_specifics(new_data, data)
 
     return new_data
 
-def normalize(data):
+def normalize(data, standard=True, exclude=[]):
     for person in range(len(data)):
-        columns = np.delete(data[person].columns, 0)  # we delete the first (mood) column
 
-        x = data[person][columns].values.astype(float)
-        min_max_scaler = preprocessing.MinMaxScaler()
-        x_scaled = min_max_scaler.fit_transform(x)
-        data[person][columns] = pd.DataFrame(x_scaled)
+        # We only take take the columns that we want to normalize
+        sub_frame = data[person][data[person].columns.difference(exclude)]
+
+        # If standard than we perform standarization standardization
+        if standard:
+            normalized_df = (sub_frame - sub_frame.mean()) / sub_frame.std()
+        else:
+            normalized_df = (sub_frame - sub_frame.min()) / (sub_frame.max() - sub_frame.min())
+
+        normalized_df = normalized_df.fillna(0)
+
+        data[person][data[person].columns.difference(exclude)] = normalized_df
+
     return data
 
 
@@ -192,7 +201,8 @@ def get_data(path='./dataset_mood_smartphone.csv', window=5, temporal=True):
     new_data = extract_values(data)
     new_data = impute(new_data)
     new_data = add_features(new_data, data, config)
-    new_data = normalize(new_data)
+
+    new_data = normalize(new_data, standard=config['standard'], exclude=config['exclude_norm'])
 
     # Saves the data to a pandas file before saving it as a pickle object in a different format
     if config['save_panda']:

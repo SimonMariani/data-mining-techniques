@@ -6,6 +6,37 @@ from tsfresh.utilities.dataframe_functions import roll_time_series
 from tsfresh.utilities.distribution import MultiprocessingDistributor
 import pandas as pd
 
+
+def add_day_specifics(new_data, data):
+
+    # Go over all the participants
+    for participant in range(len(data)):
+
+        # Add weekdays as columns in the new data
+
+        weekdays, nmbr_moods = get_day_specifics(data[participant])
+
+        new_data[participant]['weekday'] = weekdays
+        new_data[participant]['nmbr_moods'] = nmbr_moods
+
+        new_data[participant] = pd.concat([new_data[participant], pd.get_dummies(new_data[participant]['weekday'])], axis=1)
+        del new_data[participant]['weekday']
+
+
+    return new_data
+
+
+def get_day_specifics(days):
+
+    weekdays = []
+    nmbr_moods = []
+    for day in days:
+        weekdays.append(day['time'].iloc[0].day_name())
+        nmbr_moods.append(len(day.loc[day.variable == 'mood']))
+
+    return weekdays, nmbr_moods
+
+
 def add_weather_data(new_data, data):
 
     # We load the weather data
@@ -19,8 +50,9 @@ def add_weather_data(new_data, data):
     # We remove all the spaces from the weather data
     weather_data.columns = [column.split(' '[0])[-1] for column in weather_data.columns]
 
-    # We remove all the information that we do not need
-    weather_data_2014 = weather_data.loc[weather_data['year'] == 2014]
+    # We remove all the information that we do not need (from 2014 and between 8 and 22)
+    weather_data_2014 = weather_data.loc[(weather_data['year'] == 2014) & (weather_data['HH'] > 7) & (weather_data['HH'] < 23)]
+
     weather_data_2014_sub = weather_data_2014[['FH', 'T', 'SQ', 'Q', 'DR', 'RH', 'N', 'R', 'S', 'O', 'Y', 'day', 'month']]
 
     # We go over all the participants and days for that participant and add the weather data
@@ -49,6 +81,7 @@ def add_weather_data(new_data, data):
         new_data[i] = pd.concat([new_data[i], all_days_frame], axis=1)
 
     return new_data
+
 
 def add_tsfresh_participant(data, tsfresh_features, columns, k):
 

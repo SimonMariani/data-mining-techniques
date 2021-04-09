@@ -48,3 +48,5 @@ dataset:
   window: 5
   tsfresh_features: 'minimal'  # 'minimal', 'efficient', 'comprehensive'
   columns: ['mood', 'circumplex.valence']
+  standard: True
+  exclude_norm: ['mood', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday']
