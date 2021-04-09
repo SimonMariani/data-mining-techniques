@@ -191,7 +191,7 @@ def train_svm(config):
     data, labels = load_object(config['data_path'])
     data_train, labels_train, data_test, labels_test = split_data(data, labels, split=0.8)
 
-    model = svm.LinearSVC()
+    model = svm.LinearSVC(max_iter=10000)
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)

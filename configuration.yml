@@ -1,15 +1,15 @@
-model: 'all' # 'logistic' 'LSTM' 'svm' 'NN'
+model: 'logistic' # 'logistic' 'LSTM' 'svm' 'NN'
 nmbr_of_runs: 10
 
 logistic:
   data_path: 'processed_data_features.pkl'
   seed: 4
-  print: False
+  print: True
 
 svm:
   data_path: 'processed_data_features.pkl'
   seed: 4
-  print: False
+  print: True
 
 NN:
   epochs: 10
@@ -18,13 +18,13 @@ NN:
   batch_size: 9
   hidden: 64
   layers: 2
-  in_dim: 68  # 68, 17
+  in_dim: 30
   out_dim: 10
   max_norm: 5
   device: 'cpu'
   seed: 4
   data_path: 'processed_data_features.pkl'
-  print: False
+  print: True
 
 LSTM:
   epochs: 10
@@ -39,10 +39,12 @@ LSTM:
   device: 'cpu'
   seed: 4
   data_path: 'processed_data_temporal.pkl'
-  print: False
+  print: True
 
 dataset:
   path: './dataset_mood_smartphone.csv'
+  save_panda: True
   temporal: False
   window: 5
-  day_value: 'mean'
+  tsfresh_features: 'minimal'  # 'minimal', 'efficient', 'comprehensive'
+  columns: ['mood', 'circumplex.valence']
