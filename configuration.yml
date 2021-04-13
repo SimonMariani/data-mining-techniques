@@ -1,4 +1,4 @@
-models: ['BiLSTM']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
+models: ['linear']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
 nmbr_of_runs: 1  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM',
 print: True
 
