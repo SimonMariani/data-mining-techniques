@@ -1,6 +1,7 @@
 from utils import load_object, save_object
 import argparse
 import yaml
+import time
 from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
 from main import get_config, run_model
 from tabulate import tabulate
@@ -57,6 +58,8 @@ def run_models(config, subset_names, subset_indices):
 
         for seed in range(config['nmbr_of_runs']):
             for i, model in enumerate(models):
+                print("SEED " + str(seed))
+                print(model)
                 temp_config = get_config({**config, 'model': model})
                 temp_config['seed'] = seed
                 temp_config['data_path'] = folder + '/subdata_' + name + '.pkl'
@@ -89,7 +92,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = yaml.load(open(args.config, "r"), yaml.SafeLoader)
 
+    print("Starting timer")
+    start_time = time.time()
     create_subsets(config)
+    print("--- %s seconds ---" % (time.time() - start_time))
 
     #import pandas as pd
     #temp = pd.read_csv('data_processed/processed_data_pandas.csv')

@@ -47,6 +47,8 @@ def run(config):
 
     for seed in range(config['nmbr_of_runs']):
         for i, model in enumerate(models):
+            print("SEED " + str(seed))
+            print(model)
             temp_config = get_config({**config, 'model': model})
             temp_config['seed'] = seed
             temp_config['print'] = config['print']
