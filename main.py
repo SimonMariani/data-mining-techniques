@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import time
 from train import train_svm, train_linear, train_net, train_lstm, train_bilstm, train_random_forrest, train_baseline
 from tabulate import tabulate
 
@@ -74,8 +75,10 @@ if __name__ == '__main__':
 
     #config = get_config(config)
     print("Hoi")
-
+    print("Starting timer")
+    start_time = time.time()
     run(config)
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
 
