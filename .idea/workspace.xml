@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1de9122c-7c81-42e3-8d37-07a24738d1bd" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/configuration.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configuration.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore.txt" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -231,7 +232,7 @@
       <workItem from="1618212923112" duration="30833000" />
       <workItem from="1618252068146" duration="2372000" />
       <workItem from="1618297537980" duration="8129000" />
-      <workItem from="1618307110592" duration="12708000" />
+      <workItem from="1618307110592" duration="12939000" />
     </task>
     <servers />
   </component>
@@ -257,6 +258,6 @@
     <SUITE FILE_PATH="coverage/data_mining_techniques$train_lstm.coverage" NAME="train_lstm Coverage Results" MODIFIED="1617397981169" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/data_mining_techniques$dataset.coverage" NAME="dataset Coverage Results" MODIFIED="1618311948063" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/data_mining_techniques$train_lightning.coverage" NAME="train_lightning Coverage Results" MODIFIED="1617392910917" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/data_mining_techniques$main.coverage" NAME="main Coverage Results" MODIFIED="1618321068794" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/data_mining_techniques$main.coverage" NAME="main Coverage Results" MODIFIED="1618321810936" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
