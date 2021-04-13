@@ -48,6 +48,7 @@ def run(config):
         for i, model in enumerate(models):
             temp_config = get_config({**config, 'model': model})
             temp_config['seed'] = seed
+            temp_config['print'] = config['print']
 
             mse, accuracy = run_model(temp_config)
             total_mse[i] += mse

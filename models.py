@@ -27,12 +27,12 @@ class Basic_BiLSTM(nn.Module):
     def __init__(self, lstm_num_hidden=64, lstm_num_layers=2,
                  input_dim=38, output_dim=1):
 
-        super(Basic_LSTM, self).__init__()
+        super(Basic_BiLSTM, self).__init__()
 
         self.lstm_num_hidden = lstm_num_hidden
 
         self.lstm = nn.LSTM(input_dim, lstm_num_hidden, lstm_num_layers, bias=True, batch_first=True, bidirectional=True)
-        self.final = nn.Linear(lstm_num_hidden, output_dim)
+        self.final = nn.Linear(lstm_num_hidden*2, output_dim)
 
     def forward(self, x):
 
@@ -40,6 +40,8 @@ class Basic_BiLSTM(nn.Module):
         x = self.final(x)
 
         return x
+
+
 
 class Basic_Net(nn.Module):
 

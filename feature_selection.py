@@ -62,7 +62,7 @@ def run_models(config, subset_names, subset_indices):
                 temp_config['data_path'] = folder + '/subdata_' + name + '.pkl'
                 temp_config['print'] = config['print']
 
-                if model in ['NN', 'LSTM']:
+                if model in ['NN', 'LSTM', 'BiLSTM']:
                     temp_config['in_dim'] = indices[1]
 
                 mse, accuracy = run_model(temp_config)
