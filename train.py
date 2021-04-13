@@ -114,16 +114,18 @@ def train_bilstm(config):
 
         mse, accuracy = eval_LSTM(model, test_loader, device)
 
-        if epoch % config['print_every'] == 0:
-            print(f'epoch: {epoch}')
-            print(f'loss: {loss}')
-            print(f'test mse: {mse}')
-            print(f'accuracy: {accuracy}')
-            print('\n')
+        if config['print']:
+            if epoch % config['print_every'] == 0:
+                print(f'epoch: {epoch}')
+                print(f'loss: {loss}')
+                print(f'test mse: {mse}')
+                print(f'accuracy: {accuracy}')
+                print('\n')
 
-    print(f'loss: {loss}')
-    print(f'test mse: {mse}')
-    print(f'accuracy: {accuracy}')
+    if config['print']:
+        print(f'loss: {loss}')
+        print(f'test mse: {mse}')
+        print(f'accuracy: {accuracy}')
 
     return mse, accuracy
 
@@ -183,7 +185,6 @@ def train_net(config):
 
             # Forward pass
             log_probs = model(inputs)
-
             loss = criterion(log_probs.flatten(), targets)
 
             loss.backward()
@@ -321,8 +322,8 @@ def train_baseline(config):
 
 def get_metrics(y_real, y_pred):
 
-    mse = mean_squared_error(y_real, y_pred)
-    accuracy = accuracy_score(np.around(y_real), np.around(y_pred))
+    mse = mean_squared_error(y_real.astype('float32'), y_pred.astype('float32'))
+    accuracy = accuracy_score(np.around(y_real).astype('int'), np.around(y_pred).astype('int'))
 
     return mse, accuracy
 
