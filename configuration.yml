@@ -1,6 +1,6 @@
-models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
+models: ['BiLSTM']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
 nmbr_of_runs: 1  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM',
-print: False
+print: True
 
 baseline:
   data_path: './data_processed/processed_data_advanced.pkl'
@@ -24,7 +24,7 @@ svm:
   print: True
 
 NN:
-  epochs: 10
+  epochs: 100
   lr: 0.01
   momentum: 0.1
   batch_size: 32
@@ -54,7 +54,7 @@ LSTM:
   print: True
 
 BiLSTM:
-  epochs: 10
+  epochs: 100
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
