@@ -2,7 +2,7 @@ from dataset import MOOD_loader
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
-from models import Basic_LSTM, Basic_Net
+from models import Basic_LSTM, Basic_BiLSTM, Basic_Net
 from sklearn import linear_model
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, accuracy_score
@@ -67,6 +67,63 @@ def train_lstm(config):
         print(f'loss: {loss}')
         print(f'test mse: {mse}')
         print(f'accuracy: {accuracy}')
+
+    return mse, accuracy
+
+def train_bilstm(config):
+    random.seed(config['seed'])
+    np.random.seed(config['seed'])
+    torch.manual_seed(config['seed'])
+
+    # Initialize the device which to run the model on
+    device = torch.device(config['device'])
+
+    # Initialize the dataset and data loader
+    dataset_train = MOOD_loader(root=config['data_path'], train=True, shuffle=True, temporal=True)
+    dataset_test = MOOD_loader(root=config['data_path'], train=False, temporal=True)
+    train_loader = DataLoader(dataset_train, config['batch_size'])
+    test_loader = DataLoader(dataset_test, config['batch_size'])
+
+    # Initialize the model that we are going to use
+    model = Basic_BiLSTM(lstm_num_hidden=config['hidden'], lstm_num_layers=config['layers'], input_dim=config['in_dim'],
+                        output_dim=config['out_dim'])
+    model.to(device)
+
+    # Setup the loss and optimizer
+    criterion = torch.nn.MSELoss()
+    #optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
+
+    for epoch in range(config['epochs']):
+        for inputs, targets in train_loader:
+            model.zero_grad()
+
+            inputs, targets = inputs.float().to(device), targets.float().to(device)
+
+            # Forward pass
+            log_probs = model(inputs)  # shape -> (bs, seq_len, out_dim)
+            log_probs = log_probs.view(-1, log_probs.shape[1]*log_probs.shape[2])  # shape -> (bs, seq_len*out_dim)
+
+            loss = criterion(log_probs, targets)
+            loss.backward()
+
+            optimizer.step()
+
+            torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                           max_norm=config['max_norm'])
+
+        mse, accuracy = eval_LSTM(model, test_loader, device)
+
+        if epoch % config['print_every'] == 0:
+            print(f'epoch: {epoch}')
+            print(f'loss: {loss}')
+            print(f'test mse: {mse}')
+            print(f'accuracy: {accuracy}')
+            print('\n')
+
+    print(f'loss: {loss}')
+    print(f'test mse: {mse}')
+    print(f'accuracy: {accuracy}')
 
     return mse, accuracy
 

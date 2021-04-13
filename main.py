@@ -1,12 +1,14 @@
 import argparse
 import yaml
-from train import train_svm, train_linear, train_net, train_lstm, train_random_forrest, train_baseline
+from train import train_svm, train_linear, train_net, train_lstm, train_bilstm, train_random_forrest, train_baseline
 from tabulate import tabulate
 
 def get_config(config):
 
     if config['model'] == 'LSTM':
         return {**config['LSTM'], 'model': config['model']}
+    if config['model'] == 'BiLSTM':
+        return {**config['BiLSTM'], 'model': config['model']}
     if config['model'] == 'linear':
         return {**config['linear'], 'model': config['model']}
     if config['model'] == 'svm':
@@ -22,6 +24,8 @@ def run_model(config):
 
     if config['model'] == 'LSTM':
         return train_lstm(config)
+    if config['model'] == 'BiLSTM':
+        return train_bilstm(config)
     if config['model'] == 'NN':
         return train_net(config)
     if config['model'] == 'linear':
