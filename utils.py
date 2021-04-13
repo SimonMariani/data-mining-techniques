@@ -20,7 +20,13 @@ def add_day_specifics(new_data, data):
         new_data[participant]['nmbr_moods'] = nmbr_moods
 
         new_data[participant] = pd.concat([new_data[participant], pd.get_dummies(new_data[participant]['weekday'])], axis=1)
+
+        # For the months we might not have all the months but we need to represent all of them
+        new_data[participant]['months'] = pd.Categorical(new_data[participant]['months'],
+                                                         categories=['April','February', 'March', 'May', 'June'])
+
         new_data[participant] = pd.concat([new_data[participant], pd.get_dummies(new_data[participant]['months'])], axis=1)
+
         del new_data[participant]['weekday']
         del new_data[participant]['months']
 

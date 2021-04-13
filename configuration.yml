@@ -1,4 +1,4 @@
-models: ['baseline', 'linear', 'NN', 'LSTM']  # 'logistic' 'LSTM' 'svm' 'NN' 'random_forest' 'baseline'
+models: ['svm']  # 'logistic' 'LSTM' 'svm' 'NN' 'random_forest' 'baseline'
 nmbr_of_runs: 5
 
 baseline:
