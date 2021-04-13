@@ -55,16 +55,18 @@ def train_lstm(config):
 
         mse, accuracy = eval_LSTM(model, test_loader, device)
 
-        if epoch % config['print_every'] == 0:
-            print(f'epoch: {epoch}')
-            print(f'loss: {loss}')
-            print(f'test mse: {mse}')
-            print(f'accuracy: {accuracy}')
-            print('\n')
+        if config['print']:
+            if epoch % config['print_every'] == 0:
+                print(f'epoch: {epoch}')
+                print(f'loss: {loss}')
+                print(f'test mse: {mse}')
+                print(f'accuracy: {accuracy}')
+                print('\n')
 
-    print(f'loss: {loss}')
-    print(f'test mse: {mse}')
-    print(f'accuracy: {accuracy}')
+    if config['print']:
+        print(f'loss: {loss}')
+        print(f'test mse: {mse}')
+        print(f'accuracy: {accuracy}')
 
     return mse, accuracy
 
@@ -136,16 +138,18 @@ def train_net(config):
 
         mse, accuracy = eval_NN(model, data_test, device)
 
-        if epoch % config['print_every'] == 0:
-            print(f'epoch: {epoch}')
-            print(f'loss: {loss}')
-            print(f'test mse: {mse}')
-            print(f'accuracy: {accuracy}')
-            print('\n')
+        if config['print']:
+            if epoch % config['print_every'] == 0:
+                print(f'epoch: {epoch}')
+                print(f'loss: {loss}')
+                print(f'test mse: {mse}')
+                print(f'accuracy: {accuracy}')
+                print('\n')
 
-    print(f'loss: {loss}')
-    print(f'test mse: {mse}')
-    print(f'accuracy: {accuracy}')
+    if config['print']:
+        print(f'loss: {loss}')
+        print(f'test mse: {mse}')
+        print(f'accuracy: {accuracy}')
 
     return mse, accuracy
 

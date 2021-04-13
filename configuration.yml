@@ -1,5 +1,6 @@
-models: ['svm']  # 'logistic' 'LSTM' 'svm' 'NN' 'random_forest' 'baseline'
+models: ['baseline', 'linear', 'svm', 'NN', 'LSTM']  # 'logistic' 'LSTM' 'svm' 'NN' 'random_forest' 'baseline'
 nmbr_of_runs: 5
+print: False
 
 baseline:
   data_path: './data_processed/processed_data_advanced.pkl'
@@ -34,6 +35,7 @@ NN:
   seed: 4
   data_path: './data_processed/processed_data_advanced.pkl'
   print_every: 10
+  print: True
 
 LSTM:
   epochs: 100
@@ -49,6 +51,7 @@ LSTM:
   seed: 4
   data_path: './data_processed/processed_data_basic.pkl'
   print_every: 10
+  print: True
 
 dataset:
   path: './data_raw/dataset_mood_smartphone.csv'
@@ -60,3 +63,4 @@ dataset:
   standard: True
   exclude_norm: ['Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'April',
                  'February', 'March', 'May', 'June']
+

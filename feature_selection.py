@@ -33,15 +33,13 @@ def create_subsets(config):
     #print(len(ComprehensiveFCParameters()))
     #print(43+nmbr_ma+nmbr_tsfp)
 
-    subset_names = ['pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma', 'pr_su_bf_ma_tsfp', 'pr_su_bf_ma_tsfp_tsfd']
-    subset_indices = [(0,4), (0,20), (0,43), (0,43+nmbr_ma), (0, 43+nmbr_ma+nmbr_tsfp), (43+nmbr_ma+nmbr_tsfp, total_columns)]
-
-    print(type(data))
+    subset_names = ['pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma', 'pr_su_bf_ma_tsfp']  #  , 'pr_su_bf_ma_tsfp_tsfd'
+    subset_indices = [(0,4), (0,20), (0,43), (0,43+nmbr_ma), (0, 43+nmbr_ma+nmbr_tsfp)]  # , (43+nmbr_ma+nmbr_tsfp, total_columns)
 
     for name, indices in zip(subset_names, subset_indices):
         subset = []
         for i in range(len(data)):
-            subset.append(data[i][indices[0] : indices[1]])
+            subset.append(data[i][:, indices[0] : indices[1]])
 
         save_object((subset, labels), data_config['save_folder'] + '/subdata_' + name + '.pkl')
 
@@ -62,6 +60,11 @@ def run_models(config, subset_names, subset_indices):
                 temp_config = get_config({**config, 'model': model})
                 temp_config['seed'] = seed
                 temp_config['data_path'] = folder + '/subdata_' + name + '.pkl'
+                temp_config['print'] = config['print']
+
+                if model in ['NN', 'LSTM']:
+                    temp_config['in_dim'] = indices[1]
+
                 mse, accuracy = run_model(temp_config)
                 total_mse[i] += mse
                 total_accuracy[i] += accuracy
@@ -71,9 +74,9 @@ def run_models(config, subset_names, subset_indices):
         mses = [mse / config['nmbr_of_runs'] for mse in total_mse]
 
         # Print the results in a table
-        print("subset: " + name)
         table = [['accuracy'] + accuracies, ['mean_sqrd_errors'] + mses]
         print('\n')
+        print("subset: " + name)
         print(tabulate(table, headers=['metrics'] + models, tablefmt="fancy_grid"))  # plain
 
 
@@ -87,6 +90,10 @@ if __name__ == "__main__":
     config = yaml.load(open(args.config, "r"), yaml.SafeLoader)
 
     create_subsets(config)
+
+    #import pandas as pd
+    #temp = pd.read_csv('data_processed/processed_data_pandas.csv')
+    #print(temp.isnull().sum().sum())
 
 
 
