@@ -1,3 +1,3 @@
-.idea
-__pycache__
+.idea/
+__pycache__/
 dataset_mood_smartphone.csv
