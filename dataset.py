@@ -4,11 +4,11 @@ from torch.utils.data import Dataset
 import torch
 import argparse
 import yaml
-from sklearn import preprocessing
 from utils import save_object, load_object, participant, day
 import random
 from utils import moving_averages, add_tsfresh_participant, add_tsfresh_day, add_weather_data, add_day_specifics
-
+import copy
+import os
 
 def add_columns(data):
     """Adds columns to the data that are necesary for other tasks"""
@@ -92,16 +92,47 @@ def impute(data):
     return data
 
 
-def add_features(new_data, data, config):
-    """This method returns the data object with additional features such as the moving averages"""
+def add_basic_features(new_data, data, config):
+    """This method returns the data object with additional features"""
 
-    #new_data = moving_averages(new_data, window=5)
-    #new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
-    #new_data = add_tsfresh_day(new_data, data, config['tsfresh_features'], columns=config['columns'])
-    #new_data = add_weather_data(new_data, data)
+    new_data = add_weather_data(new_data, data)
     new_data = add_day_specifics(new_data, data)
 
     return new_data
+
+def add_advanced_features(new_data, data, config):
+    """This method returns the data object with additional features such as the moving averages"""
+
+    # Second we add complex statistics features
+    new_data = moving_averages(new_data, window=5, variables=config['columns'])
+    new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
+    new_data = add_tsfresh_day(new_data, data, 'minimal', columns=config['columns'])
+
+    return new_data
+
+
+def get_labels(data):
+
+    new_data = []
+    targets = []
+    baseline_targets = []
+    for i in range(len(data)):
+        # Extract the labels
+        labels_person = pd.DataFrame(data[i]['mood'][1:].reset_index(drop=True))
+        labels_person.columns = ['labels']
+
+        # Extract the baseline predictions
+        labels_person_baseline = pd.DataFrame(data[i]['mood'][:-1].reset_index(drop=True))
+
+        # Remove the last datapoint as we do not have a label for that datapoint
+        data_person = data[i].iloc[:-1].reset_index(drop=True)
+
+        new_data.append(data_person)
+        targets.append(labels_person)
+        baseline_targets.append(labels_person_baseline)
+
+    return new_data, targets, baseline_targets
+
 
 def normalize(data, standard=True, exclude=[]):
     for person in range(len(data)):
@@ -122,52 +153,40 @@ def normalize(data, standard=True, exclude=[]):
     return data
 
 
-def save_temporal(data, filename='processed_data_temporal.pkl'):
+def save_data(data, targets, filename='processed_data_temporal.pkl'):
 
-    new_data = []
-    targets = []
-
-    for i in range(len(data)):  # all participants
-        target_days = []
-        data_days = []
-
-        for j in range(len(data[i]) - 1):  # all days
-            data_days.append(torch.tensor(data[i].iloc[j]))
-            target_days.append(torch.tensor(data[i].iloc[j + 1]['mood']))
-
-        new_data.append(data_days)
-        targets.append(target_days)
+    new_data = [person.to_numpy() for person in data]
+    targets = [target.to_numpy().squeeze(axis=1) for target in targets]
 
     save_object((new_data, targets), filename)
 
 
-def save_features(data, filename='processed_data_features.pkl'):
+def save_pandas(data, targets, filename='processed_data_pandas.csv'):
 
-    new_data = []
-    targets = []
-    for i in range(len(data)):
-        for j in range(len(data[i]) - 1):
-            new_data.append(data[i].iloc[j].to_numpy().astype(float))
-            targets.append(float(data[i].iloc[j + 1]['mood']))
+    new_data = pd.concat(data, axis=0)
+    targets = pd.concat(targets, axis=0)
+    data_full = pd.concat([targets, new_data], axis=1)
 
-    save_object((new_data, targets), filename)
+    data_full.to_csv(filename)
 
 
 class MOOD_loader(Dataset):
 
-    def __init__(self, root='processed_data_temporal.pkl', train=True, split=0.8, shuffle=True):
+    def __init__(self, root='processed_data_advanced.pkl', train=True, split=0.8, shuffle=True, temporal=False):
 
-        self.load(root, train, split, shuffle)
+        self.load(root, train, split, shuffle, temporal)
         self.root = root
 
-    def load(self, root, train, split, shuffle):
+    def load(self, root, train, split, shuffle, temporal):
         data, targets = load_object(root)
 
+        # First shuffle the data so that we randomize teh participants
         if shuffle:
             temp = list(zip(data, targets))
             random.shuffle(temp)
             data, targets = zip(*temp)
 
+        # Now we deterime where to split them and if we are loading the train or test set
         split = int(split * len(data))
 
         if train:
@@ -177,8 +196,15 @@ class MOOD_loader(Dataset):
             data = data[split:]
             targets = targets[split:]
 
-        self.data = data
-        self.targets = targets
+        # If the data is temporal we want to maintain our original list structure
+        if temporal:
+            self.data = [torch.from_numpy(person) for person in data]
+            self.targets = [torch.from_numpy(target) for target in targets]
+        else:
+            self.data = torch.from_numpy(np.concatenate(data, axis=0))
+            self.targets = torch.from_numpy(np.concatenate(targets, axis=0))
+
+            #print(len(self.data[0]))
 
     def __len__(self):
         return len(self.data)
@@ -191,7 +217,7 @@ class MOOD_loader(Dataset):
         return sequence, targets
 
 
-def get_data(path='./dataset_mood_smartphone.csv', window=5, temporal=True):
+def get_data(path='./data_raw/dataset_mood_smartphone.csv'):
     """Returns the completely processed data given a path"""
     data = pd.read_csv(path, index_col=0)
 
@@ -200,21 +226,34 @@ def get_data(path='./dataset_mood_smartphone.csv', window=5, temporal=True):
 
     new_data = extract_values(data)
     new_data = impute(new_data)
-    new_data = add_features(new_data, data, config)
+
+    # For the temporal and feature model we add different features and therefore we also need to
+    # take care of the imputation and normalization in a different manner
+    new_data = add_basic_features(new_data, data, config)
+    new_data_advanced = add_advanced_features(copy.deepcopy(new_data), data, config)
+
+    new_data = impute(new_data)
+    new_data_advanced = impute(new_data_advanced)
+
+    # This can be done before only ones but because we want to reset the index and such it is easier to do it here
+    new_data, targets, baseline_targets = get_labels(new_data)
+    baseline_targets = [target.to_numpy().squeeze(axis=1) for target in baseline_targets]
+    new_data_advanced, targets_advanced, baseline_targets_advanced = get_labels(new_data_advanced)
 
     new_data = normalize(new_data, standard=config['standard'], exclude=config['exclude_norm'])
+    new_data_advanced = normalize(new_data_advanced, standard=config['standard'], exclude=config['exclude_norm'])
+
+    # Now we want to save all the data
+    if not os.path.exists(config['save_folder']):
+        os.makedirs(config['save_folder'])
 
     # Saves the data to a pandas file before saving it as a pickle object in a different format
     if config['save_panda']:
-        pd.concat(new_data).to_csv('all_data.csv')
+        save_pandas(new_data_advanced, targets, filename=config['save_folder'] + '/processed_data_pandas.csv')
 
-    # For the temporal model we only need these values but for the feature model we still do some feature engineering
-    if temporal:
-        save_temporal(new_data)
-        data, labels = load_object('processed_data_temporal.pkl')  # just an example on how to load the data
-    else:
-        save_features(new_data)
-        data, labels = load_object('processed_data_features.pkl')  # just an example on how to load the data
+    save_data(new_data, targets, filename=config['save_folder'] + '/processed_data_basic.pkl')
+    save_data(new_data_advanced, targets_advanced, filename=config['save_folder'] + '/processed_data_advanced.pkl')
+    save_object(baseline_targets, filename=config['save_folder'] + '/baseline_targets.pkl')
 
 if __name__ == "__main__":
 
@@ -226,4 +265,4 @@ if __name__ == "__main__":
     config = yaml.load(open(args.config, "r"), yaml.SafeLoader)
     config = {**config['dataset']}
 
-    get_data(config['path'], config['window'], config['temporal'])
+    get_data(config['path'])

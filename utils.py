@@ -13,14 +13,16 @@ def add_day_specifics(new_data, data):
     for participant in range(len(data)):
 
         # Add weekdays as columns in the new data
-
-        weekdays, nmbr_moods = get_day_specifics(data[participant])
+        weekdays, months, nmbr_moods = get_day_specifics(data[participant])
 
         new_data[participant]['weekday'] = weekdays
+        new_data[participant]['months'] = months
         new_data[participant]['nmbr_moods'] = nmbr_moods
 
         new_data[participant] = pd.concat([new_data[participant], pd.get_dummies(new_data[participant]['weekday'])], axis=1)
+        new_data[participant] = pd.concat([new_data[participant], pd.get_dummies(new_data[participant]['months'])], axis=1)
         del new_data[participant]['weekday']
+        del new_data[participant]['months']
 
 
     return new_data
@@ -29,18 +31,21 @@ def add_day_specifics(new_data, data):
 def get_day_specifics(days):
 
     weekdays = []
+    months = []
     nmbr_moods = []
+
     for day in days:
         weekdays.append(day['time'].iloc[0].day_name())
+        months.append(day['time'].iloc[0].month_name())
         nmbr_moods.append(len(day.loc[day.variable == 'mood']))
 
-    return weekdays, nmbr_moods
+    return weekdays, months, nmbr_moods
 
 
 def add_weather_data(new_data, data):
 
     # We load the weather data
-    weather_data = pd.read_csv('weerdata.txt')
+    weather_data = pd.read_csv('./data_raw/weerdata.txt')
 
     # We add the data about the dates that we need
     weather_data['year'] = [int(str(date)[:4]) for date in weather_data['YYYYMMDD']]
@@ -182,20 +187,17 @@ def add_tsfresh_day(new_data, data, tsfresh_features, columns):
     return new_data
 
 
-def moving_averages(data, window):
-
-    # We first identify all types of variables
-    all_types = data[0].columns
+def moving_averages(data, window, variables):
 
     # We loop over the players and find the moving averages of every type
     for i in range(len(data)):
-        for type in all_types:
-            moving_average, cumulative_average, exponential_average = get_moving_averages(data[i], window, type)
+        for variable in variables:
+            moving_average, cumulative_average, exponential_average = get_moving_averages(data[i], window, variable)
 
             # initialize the columns of the dataframe
-            data[i][type + '_moving'] = moving_average
-            data[i][type + '_cumulative'] = cumulative_average
-            data[i][type + '_exponential'] = exponential_average
+            data[i][variable + '_moving'] = moving_average
+            data[i][variable + '_cumulative'] = cumulative_average
+            data[i][variable + '_exponential'] = exponential_average
 
     return data
 
