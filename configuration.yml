@@ -1,5 +1,5 @@
-models: ['svm']  # 'logistic' 'LSTM' 'svm' 'NN' 'random_forest' 'baseline'
-nmbr_of_runs: 5
+models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
+nmbr_of_runs: 1  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM',
 print: False
 
 baseline:
@@ -24,11 +24,11 @@ svm:
   print: True
 
 NN:
-  epochs: 100
-  lr: 0.1
+  epochs: 10
+  lr: 0.01
   momentum: 0.1
   batch_size: 32
-  in_dim: 38
+  in_dim: 1623
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
@@ -38,13 +38,29 @@ NN:
   print: True
 
 LSTM:
-  epochs: 100
+  epochs: 10
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
   hidden: 64
   layers: 2
-  in_dim: 38
+  in_dim: 43
+  out_dim: 1
+  max_norm: 5
+  device: 'cuda'  # cuda, cpu
+  seed: 4
+  data_path: './data_processed/processed_data_basic.pkl'
+  print_every: 10
+  print: True
+
+BiLSTM:
+  epochs: 10
+  lr: 0.05
+  momentum: 0.5
+  batch_size: 1  # This needs to be 1 because of the variable sequence lengths
+  hidden: 64
+  layers: 2
+  in_dim: 43
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
