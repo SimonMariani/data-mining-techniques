@@ -57,9 +57,9 @@ def run_models(config, subset_names, subset_indices):
         total_mse = [0 for i in range(len(models))]
 
         for seed in range(config['nmbr_of_runs']):
+            print("SEED " + str(seed))
             for i, model in enumerate(models):
-                print("SEED " + str(seed))
-                print(model)
+                
                 temp_config = get_config({**config, 'model': model})
                 temp_config['seed'] = seed
                 temp_config['data_path'] = folder + '/subdata_' + name + '.pkl'
