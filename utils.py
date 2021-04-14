@@ -4,7 +4,31 @@ from tsfresh.feature_extraction import MinimalFCParameters, EfficientFCParameter
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import roll_time_series
 from tsfresh.utilities.distribution import MultiprocessingDistributor
+from sklearn.model_selection import KFold
 import pandas as pd
+import numpy as np
+
+
+def get_folds(config):
+
+    data_train, labels_train = load_object(config['data_path'])
+    data_train, labels_train = np.array(data_train, dtype=object), np.array(labels_train, dtype=object)
+
+    baseline_targets = np.array(load_object('./data_processed/baseline_targets_train.pkl'), dtype=object)
+
+    all_folds_baseline = []
+    all_folds = []
+    tscv = KFold(n_splits=config['n_splits'])
+    for train, val in tscv.split(data_train):
+        data_train_sub = data_train[train]
+        labels_train_sub = labels_train[train]
+        data_val = data_train[val]
+        labels_val = labels_train[val]
+
+        all_folds.append([data_train_sub, labels_train_sub, data_val, labels_val])
+        all_folds_baseline.append([baseline_targets[train], baseline_targets[val]])
+
+    return all_folds, all_folds_baseline
 
 
 def add_day_specifics(new_data, data):

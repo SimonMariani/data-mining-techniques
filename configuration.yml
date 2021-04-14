@@ -1,30 +1,40 @@
-models: ['linear']  # 'linear' 'LSTM' 'BiLSTM' 'svm' 'NN' 'random_forest' 'baseline'
-nmbr_of_runs: 1  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM',
-print: True
+models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
+nmbr_of_runs: 1
+test_only: False  # this one overwrites test
+test: True
+print: False
 
 baseline:
-  data_path: './data_processed/processed_data_advanced.pkl'
-  targets_path: './data_processed/baseline_targets.pkl'
+  data_path: './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/processed_data_advanced_test.pkl'
+  targets_path: './data_processed/baseline_targets_test.pkl'
+  n_splits: 5
   seed: 4
   print: True
 
 random_forest:
-  data_path: './data_processed/processed_data_advanced.pkl'
+  data_path: './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/processed_data_advanced_test.pkl'
+  n_splits: 5
   seed: 4
   print: True
 
 linear:
-  data_path: './data_processed/processed_data_advanced.pkl'
+  data_path: './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/processed_data_advanced_test.pkl'
+  n_splits: 5
   seed: 4
   print: True
 
 svm:
-  data_path: './data_processed/processed_data_advanced.pkl'
+  data_path: './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/processed_data_advanced_test.pkl'
+  n_splits: 5
   seed: 4
   print: True
 
 NN:
-  epochs: 100
+  epochs: 1
   lr: 0.01
   momentum: 0.1
   batch_size: 32
@@ -33,12 +43,14 @@ NN:
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_advanced.pkl'
-  print_every: 10
+  data_path: './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/processed_data_advanced_test.pkl'
+  n_splits: 5
+  print_every: 1
   print: True
 
 LSTM:
-  epochs: 10
+  epochs: 1
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
@@ -49,12 +61,14 @@ LSTM:
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_basic.pkl'
-  print_every: 10
+  data_path: './data_processed/processed_data_basic_train.pkl'
+  test_path: './data_processed/processed_data_basic_test.pkl'
+  n_splits: 5
+  print_every: 1
   print: True
 
 BiLSTM:
-  epochs: 100
+  epochs: 1
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
@@ -65,13 +79,17 @@ BiLSTM:
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_basic.pkl'
-  print_every: 10
+  data_path: './data_processed/processed_data_basic_train.pkl'
+  test_path: './data_processed/processed_data_basic_test.pkl'
+  n_splits: 5
+  print_every: 1
   print: True
 
 dataset:
   path: './data_raw/dataset_mood_smartphone.csv'
   save_folder: 'data_processed'
+  seed: 42
+  test_split: 0.8
   save_panda: True
   window: 5
   tsfresh_features: 'comprehensive'  # 'minimal', 'efficient', 'comprehensive'
