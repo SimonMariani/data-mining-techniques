@@ -55,6 +55,7 @@ def run_models(config, subset_names, subset_indices):
         total_mse = [0 for i in range(len(models))]
         total_rmse = [0 for i in range(len(models))]
         total_r2 = [0 for i in range(len(models))]
+        total_adj_r2 = [0 for i in range(len(models))]
 
         total_accuracy = [0 for i in range(len(models))]
         total_balanced_accuracy = [0 for i in range(len(models))]
@@ -73,13 +74,14 @@ def run_models(config, subset_names, subset_indices):
             for index, (fold, fold_base) in enumerate(zip(all_folds, all_folds_baseline)):
 
                 if model == 'baseline':
-                    mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
+                    mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
                 else:
-                    mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
+                    mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
 
                 total_mse[i] += mse
                 total_rmse[i] += rmse
                 total_r2[i] += r2
+                total_adj_r2[i] += adj_r2
 
                 total_accuracy[i] += accuracy
                 total_balanced_accuracy[i] += balanced_accuracy
@@ -88,12 +90,13 @@ def run_models(config, subset_names, subset_indices):
         mses = [mse / len(all_folds) for mse in total_mse]
         rmses = [rmse / len(all_folds) for rmse in total_rmse]
         r2s = [r2 / len(all_folds) for r2 in total_r2]
+        adj_r2s = [adj_r2 / len(all_folds) for adj_r2 in total_adj_r2]
 
         accuracies = [accuracy / len(all_folds) for accuracy in total_accuracy]
         balanced_accuracies = [balanced_accuracy / len(all_folds) for balanced_accuracy in total_balanced_accuracy]
 
         # Print the results in a table
-        table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['accuracy'] + accuracies,
+        table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['adj_r2_score'] + adj_r2s, ['accuracy'] + accuracies,
                  ['bal_accuracy'] + balanced_accuracies]
 
         print('dataset: ' + name)
