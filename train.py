@@ -38,6 +38,10 @@ def train_lstm(config, fold):
     #optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
 
+    # Some eraly stopping parameters for if early stopping is enabled
+    val_len = config['val_len']
+    val_history = [0 for i in range(val_len)]
+
     for epoch in range(config['epochs']):
         for inputs, targets in data_train:
             model.zero_grad()
@@ -57,6 +61,14 @@ def train_lstm(config, fold):
                                            max_norm=config['max_norm'])
 
         mse, rmse, r2, accuracy, balanced_accuracy = eval_LSTM(model, data_test, device)
+
+        val_history.pop(0)
+        val_history.append(mse)
+
+        if config['early_stopping'] and epoch > val_len:
+            half = int(val_len / 2)
+            if (sum(val_history[:half]) / val_len) < (sum(val_history[half:]) / val_len):
+                break
 
         if config['print']:
             if epoch % config['print_every'] == 0:
@@ -96,6 +108,10 @@ def train_bilstm(config, fold):
     #optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
 
+    # Some eraly stopping parameters for if early stopping is enabled
+    val_len = config['val_len']
+    val_history = [0 for i in range(val_len)]
+
     for epoch in range(config['epochs']):
         for inputs, targets in data_train:
             model.zero_grad()
@@ -115,6 +131,14 @@ def train_bilstm(config, fold):
                                            max_norm=config['max_norm'])
 
         mse, rmse, r2, accuracy, balanced_accuracy = eval_LSTM(model, data_test, device)
+
+        val_history.pop(0)
+        val_history.append(mse)
+
+        if config['early_stopping'] and epoch > val_len:
+            half = int(val_len / 2)
+            if (sum(val_history[:half]) / val_len) < (sum(val_history[half:]) / val_len):
+                break
 
         if config['print']:
             if epoch % config['print_every'] == 0:
@@ -174,6 +198,10 @@ def train_net(config, fold):
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
 
+    # Some eraly stopping parameters for if early stopping is enabled
+    val_len = config['val_len']
+    val_history = [0 for i in range(val_len)]
+
     for epoch in range(config['epochs']):
         for inputs, targets in data_train:
             model.zero_grad()
@@ -195,6 +223,14 @@ def train_net(config, fold):
                                            max_norm=config['max_norm'])
 
         mse, rmse, r2, accuracy, balanced_accuracy = eval_NN(model, data_test, device)
+
+        val_history.pop(0)
+        val_history.append(mse)
+
+        if config['early_stopping'] and epoch > val_len:
+            half = int(val_len/2)
+            if (sum(val_history[:half]) / val_len) < (sum(val_history[half:]) / val_len):
+                break
 
         if config['print']:
             if epoch % config['print_every'] == 0:

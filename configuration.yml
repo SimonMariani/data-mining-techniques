@@ -1,4 +1,4 @@
-models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
+models: ['BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
 nmbr_of_runs: 1
 test_only: False  # this one overwrites test
 test: False
@@ -34,11 +34,11 @@ svm:
   print: True
 
 NN:
-  epochs: 10
+  epochs: 200
   lr: 0.01
   momentum: 0.3
   batch_size: 32
-  in_dim: 1623
+  in_dim: 1641
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
@@ -48,9 +48,11 @@ NN:
   n_splits: 5
   print_every: 10
   print: True
+  early_stopping: True
+  val_len: 20
 
 LSTM:
-  epochs: 10
+  epochs: 200
   lr: 0.01
   momentum: 0.0
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
@@ -66,9 +68,11 @@ LSTM:
   n_splits: 5
   print_every: 10
   print: True
+  early_stopping: False
+  val_len: 20
 
 BiLSTM:
-  epochs: 10
+  epochs: 200
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
@@ -84,6 +88,8 @@ BiLSTM:
   n_splits: 5
   print_every: 50
   print: True
+  early_stopping: True
+  val_len: 20
 
 dataset:
   path: './data_raw/dataset_mood_smartphone.csv'

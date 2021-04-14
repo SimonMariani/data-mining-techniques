@@ -31,9 +31,6 @@ def create_subsets(config):
     # We load the data
     data, labels = load_object(data_config['save_folder'] + '/processed_data_advanced_train.pkl')
     total_columns = len(data[0][0])
-    print(total_columns)
-    print(total_columns)
-    print(total_columns)
 
     subset_names = ['m', 'pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma', 'pr_su_bf_ma_tsfp', 'pr_su_bf_ma_tsfp_tsfd']  #  , 'pr_su_bf_ma_tsfp_tsfd'
     subset_indices = [(0,1), (0,4), (0,20), (0,43), (0,43+nmbr_ma), (0, 43+nmbr_ma+nmbr_tsfp), (43+nmbr_ma+nmbr_tsfp, total_columns)]  # , (43+nmbr_ma+nmbr_tsfp, total_columns)
