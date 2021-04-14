@@ -66,11 +66,6 @@ def train_lstm(config, fold):
                 print(f'accuracy: {accuracy}')
                 print('\n')
 
-    if config['print']:
-        print(f'loss: {loss}')
-        print(f'test mse: {mse}')
-        print(f'accuracy: {accuracy}')
-
     return mse, rmse, r2, accuracy, balanced_accuracy
 
 
@@ -128,11 +123,6 @@ def train_bilstm(config, fold):
                 print(f'test mse: {mse}')
                 print(f'accuracy: {accuracy}')
                 print('\n')
-
-    if config['print']:
-        print(f'loss: {loss}')
-        print(f'test mse: {mse}')
-        print(f'accuracy: {accuracy}')
 
     return mse, rmse, r2, accuracy, balanced_accuracy
 
@@ -214,11 +204,6 @@ def train_net(config, fold):
                 print(f'accuracy: {accuracy}')
                 print('\n')
 
-    if config['print']:
-        print(f'loss: {loss}')
-        print(f'test mse: {mse}')
-        print(f'accuracy: {accuracy}')
-
     return mse, rmse, r2, accuracy, balanced_accuracy
 
 
@@ -292,7 +277,7 @@ def train_random_forrest(config, fold):
     data_train, labels_train = np.concatenate(data_train, axis=0), np.concatenate(labels_train, axis=0)
     data_test, labels_test = np.concatenate(data_test, axis=0), np.concatenate(labels_test, axis=0)
 
-    model = RandomForestRegressor(n_estimators=1, max_depth=100)
+    model = RandomForestRegressor()
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)

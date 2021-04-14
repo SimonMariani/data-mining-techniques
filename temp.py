@@ -10,22 +10,13 @@ import numpy as np
 
 if __name__ == '__main__':
 
-    data = load_object('./data_processed/processed_data_advanced.pkl')
-    print(len(data[0][0]))
+    data, labels = load_object('./data_processed/processed_data_advanced_train.pkl')
 
-    data = pd.read_csv('processed_data_pandas.csv', index_col=0)
-    labels = data['labels']
-    data = data[data.columns.difference(['labels'])]
+    print(len(data))
+    print(len(labels))
 
-    print(data)
-    print(labels)
-
-    filtered = select_features(data, labels, test_for_real_target_real_feature='kendall')
-
-    #filtered = calculate_relevance_table(data, labels)
-    print(filtered)
-
-    print(filtered.columns)
+    print(data[0])
+    print(labels[0])
 
 """data, targets = load_object('processed_data_features.pkl')
 

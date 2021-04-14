@@ -41,6 +41,7 @@ def run_model(config, fold, fold_base=None):
     if config['model'] == 'baseline':
         return train_baseline(config, fold, fold_base)
 
+
 def run(config):
 
     models = config['models']
@@ -74,7 +75,6 @@ def run(config):
 
             total_accuracy[i] += accuracy
             total_balanced_accuracy[i] += balanced_accuracy
-
 
     # Calculate the average over all runs
     mses = [mse / len(all_folds) for mse in total_mse]
