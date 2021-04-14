@@ -96,6 +96,7 @@ def run_models(config, subset_names, subset_indices):
         table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['accuracy'] + accuracies,
                  ['bal_accuracy'] + balanced_accuracies]
 
+        print('dataset: ' + name)
         print(tabulate(table, headers=['metrics'] + models, tablefmt="fancy_grid"))  # plain
 
 
