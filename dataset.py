@@ -107,7 +107,7 @@ def add_advanced_features(new_data, data, config):
     # Second we add complex statistics features
     new_data = moving_averages(new_data, window=5, variables=config['columns'])
     new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
-    #new_data = add_tsfresh_day(new_data, data, 'minimal', columns=config['columns'])
+    new_data = add_tsfresh_day(new_data, data, 'minimal', columns=config['columns'])
 
     return new_data
 

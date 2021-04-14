@@ -1,6 +1,6 @@
 models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
 nmbr_of_runs: 1
-test_only: True  # this one overwrites test
+test_only: False  # this one overwrites test
 test: False
 print: False
 
@@ -89,7 +89,7 @@ dataset:
   path: './data_raw/dataset_mood_smartphone.csv'
   save_folder: 'data_processed'
   seed: 42
-  test_split: 0.8
+  test_split: 0.75
   save_panda: True
   window: 5
   tsfresh_features: 'comprehensive'  # 'minimal', 'efficient', 'comprehensive'
