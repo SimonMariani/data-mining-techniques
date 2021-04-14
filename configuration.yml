@@ -1,4 +1,4 @@
-models: ['baseline', 'linear', 'svm', 'random_forest',]  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
+models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
 nmbr_of_runs: 1
 test_only: True  # this one overwrites test
 test: False
@@ -34,7 +34,7 @@ svm:
   print: True
 
 NN:
-  epochs: 200
+  epochs: 10
   lr: 0.01
   momentum: 0.3
   batch_size: 32
@@ -46,11 +46,11 @@ NN:
   data_path: './data_processed/processed_data_advanced_train.pkl'
   test_path: './data_processed/processed_data_advanced_test.pkl'
   n_splits: 5
-  print_every: 25
+  print_every: 10
   print: True
 
 LSTM:
-  epochs: 200
+  epochs: 10
   lr: 0.01
   momentum: 0.0
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
