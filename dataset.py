@@ -100,6 +100,7 @@ def add_basic_features(new_data, data, config):
 
     return new_data
 
+
 def add_advanced_features(new_data, data, config):
     """This method returns the data object with additional features such as the moving averages"""
 
@@ -170,41 +171,47 @@ def save_pandas(data, targets, filename='processed_data_pandas.csv'):
     data_full.to_csv(filename)
 
 
+def split_test(data, targets, seed, split=0.8):
+
+    random.seed(seed)
+    split = int(split * len(targets))
+
+    # If we just want to shuffle baseline targets
+    if data is None:
+        random.shuffle(targets)
+        targets_train = targets[:split]
+        targets_test = targets[split:]
+
+        return targets_train, targets_test
+
+    else:
+        temp = list(zip(data, targets))
+        random.shuffle(temp)
+        data, targets = zip(*temp)
+
+        data_train = data[:split]
+        targets_train = targets[:split]
+
+        data_test = data[split:]
+        targets_test = targets[split:]
+
+        return data_train, targets_train, data_test, targets_test
+
 class MOOD_loader(Dataset):
 
-    def __init__(self, root='processed_data_advanced.pkl', train=True, split=0.8, shuffle=True, temporal=False):
+    def __init__(self, data, labels, temporal=False):
 
-        self.load(root, train, split, shuffle, temporal)
-        self.root = root
+        self.load(data, labels, temporal)
 
-    def load(self, root, train, split, shuffle, temporal):
-        data, targets = load_object(root)
-
-        # First shuffle the data so that we randomize teh participants
-        if shuffle:
-            temp = list(zip(data, targets))
-            random.shuffle(temp)
-            data, targets = zip(*temp)
-
-        # Now we deterime where to split them and if we are loading the train or test set
-        split = int(split * len(data))
-
-        if train:
-            data = data[:split]
-            targets = targets[:split]
-        else:
-            data = data[split:]
-            targets = targets[split:]
+    def load(self, data, labels, temporal):
 
         # If the data is temporal we want to maintain our original list structure
         if temporal:
             self.data = [torch.from_numpy(person) for person in data]
-            self.targets = [torch.from_numpy(target) for target in targets]
+            self.labels = [torch.from_numpy(label) for label in labels]
         else:
             self.data = torch.from_numpy(np.concatenate(data, axis=0))
-            self.targets = torch.from_numpy(np.concatenate(targets, axis=0))
-
-            #print(len(self.data[0]))
+            self.labels = torch.from_numpy(np.concatenate(labels, axis=0))
 
     def __len__(self):
         return len(self.data)
@@ -212,12 +219,12 @@ class MOOD_loader(Dataset):
     def __getitem__(self, item):
 
         sequence = self.data[item]
-        targets = self.targets[item]
+        targets = self.labels[item]
 
         return sequence, targets
 
 
-def get_data(path='./data_raw/dataset_mood_smartphone.csv'):
+def get_data(config, path='./data_raw/dataset_mood_smartphone.csv'):
     """Returns the completely processed data given a path"""
     data = pd.read_csv(path, index_col=0)
 
@@ -238,7 +245,7 @@ def get_data(path='./data_raw/dataset_mood_smartphone.csv'):
     # This can be done before only ones but because we want to reset the index and such it is easier to do it here
     new_data, targets, baseline_targets = get_labels(new_data)
     baseline_targets = [target.to_numpy().squeeze(axis=1) for target in baseline_targets]
-    new_data_advanced, targets_advanced, baseline_targets_advanced = get_labels(new_data_advanced)
+    new_data_advanced, _, _ = get_labels(new_data_advanced)
 
     new_data = normalize(new_data, standard=config['standard'], exclude=config['exclude_norm'])
     new_data_advanced = normalize(new_data_advanced, standard=config['standard'], exclude=config['exclude_norm'])
@@ -247,13 +254,27 @@ def get_data(path='./data_raw/dataset_mood_smartphone.csv'):
     if not os.path.exists(config['save_folder']):
         os.makedirs(config['save_folder'])
 
+    data_train, targets_train, data_test, targets_test = split_test(new_data, targets, seed=config['seed'],
+                                                                    split=config['test_split'])
+
+    save_data(data_train, targets_train, filename=config['save_folder'] + '/processed_data_basic_train.pkl')
+    save_data(data_test, targets_test, filename=config['save_folder'] + '/processed_data_basic_test.pkl')
+
+
+    data_train, targets_train, data_test, targets_test = split_test(new_data_advanced, targets, seed=config['seed'],
+                                                                    split=config['test_split'])
+
+    save_data(data_train, targets_train, filename=config['save_folder'] + '/processed_data_advanced_train.pkl')
+    save_data(data_test, targets_test, filename=config['save_folder'] + '/processed_data_advanced_test.pkl')
+
     # Saves the data to a pandas file before saving it as a pickle object in a different format
     if config['save_panda']:
-        save_pandas(new_data_advanced, targets, filename=config['save_folder'] + '/processed_data_pandas.csv')
+        save_pandas(data_train, targets_train, filename=config['save_folder'] + '/processed_data_pandas.csv')
 
-    save_data(new_data, targets, filename=config['save_folder'] + '/processed_data_basic.pkl')
-    save_data(new_data_advanced, targets_advanced, filename=config['save_folder'] + '/processed_data_advanced.pkl')
-    save_object(baseline_targets, filename=config['save_folder'] + '/baseline_targets.pkl')
+    targets_train, targets_test = split_test(None, baseline_targets, seed=config['seed'], split=config['test_split'])
+    save_object(targets_train, filename=config['save_folder'] + '/baseline_targets_train.pkl')
+    save_object(targets_test, filename=config['save_folder'] + '/baseline_targets_test.pkl')
+
 
 if __name__ == "__main__":
 
@@ -265,4 +286,4 @@ if __name__ == "__main__":
     config = yaml.load(open(args.config, "r"), yaml.SafeLoader)
     config = {**config['dataset']}
 
-    get_data(config['path'])
+    get_data(config, config['path'])
