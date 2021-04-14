@@ -5,13 +5,13 @@ from torch.utils.data import DataLoader
 from models import Basic_LSTM, Basic_BiLSTM, Basic_Net
 from sklearn import linear_model
 from sklearn.svm import SVR
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error, accuracy_score, balanced_accuracy_score, r2_score
 from sklearn.ensemble import RandomForestRegressor
 from dataset import load_object
 import random
 
 
-def train_lstm(config):
+def train_lstm(config, fold):
     random.seed(config['seed'])
     np.random.seed(config['seed'])
     torch.manual_seed(config['seed'])
@@ -19,11 +19,14 @@ def train_lstm(config):
     # Initialize the device which to run the model on
     device = torch.device(config['device'])
 
+    # Extract the data
+    data_train, labels_train, data_test, labels_test = fold
+
     # Initialize the dataset and data loader
-    dataset_train = MOOD_loader(root=config['data_path'], train=True, shuffle=True, temporal=True)
-    dataset_test = MOOD_loader(root=config['data_path'], train=False, temporal=True)
-    train_loader = DataLoader(dataset_train, config['batch_size'])
-    test_loader = DataLoader(dataset_test, config['batch_size'])
+    dataset_train = MOOD_loader(data_train, labels_train, temporal=True)
+    dataset_test = MOOD_loader(data_test, labels_test, temporal=True)
+    data_train = DataLoader(dataset_train, config['batch_size'])  # batch size=9 means exactly 3 batches per epoch
+    data_test = DataLoader(dataset_test, config['batch_size'])
 
     # Initialize the model that we are going to use
     model = Basic_LSTM(lstm_num_hidden=config['hidden'], lstm_num_layers=config['layers'], input_dim=config['in_dim'],
@@ -36,7 +39,7 @@ def train_lstm(config):
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
 
     for epoch in range(config['epochs']):
-        for inputs, targets in train_loader:
+        for inputs, targets in data_train:
             model.zero_grad()
 
             inputs, targets = inputs.float().to(device), targets.float().to(device)
@@ -53,7 +56,7 @@ def train_lstm(config):
             torch.nn.utils.clip_grad_norm_(model.parameters(),
                                            max_norm=config['max_norm'])
 
-        mse, accuracy = eval_LSTM(model, test_loader, device)
+        mse, rmse, r2, accuracy, balanced_accuracy = eval_LSTM(model, data_test, device)
 
         if config['print']:
             if epoch % config['print_every'] == 0:
@@ -68,9 +71,10 @@ def train_lstm(config):
         print(f'test mse: {mse}')
         print(f'accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
-def train_bilstm(config):
+
+def train_bilstm(config, fold):
     random.seed(config['seed'])
     np.random.seed(config['seed'])
     torch.manual_seed(config['seed'])
@@ -78,11 +82,14 @@ def train_bilstm(config):
     # Initialize the device which to run the model on
     device = torch.device(config['device'])
 
+    # Extract the data
+    data_train, labels_train, data_test, labels_test = fold
+
     # Initialize the dataset and data loader
-    dataset_train = MOOD_loader(root=config['data_path'], train=True, shuffle=True, temporal=True)
-    dataset_test = MOOD_loader(root=config['data_path'], train=False, temporal=True)
-    train_loader = DataLoader(dataset_train, config['batch_size'])
-    test_loader = DataLoader(dataset_test, config['batch_size'])
+    dataset_train = MOOD_loader(data_train, labels_train, temporal=True)
+    dataset_test = MOOD_loader(data_test, labels_test, temporal=True)
+    data_train = DataLoader(dataset_train, config['batch_size'])  # batch size=9 means exactly 3 batches per epoch
+    data_test = DataLoader(dataset_test, config['batch_size'])
 
     # Initialize the model that we are going to use
     model = Basic_BiLSTM(lstm_num_hidden=config['hidden'], lstm_num_layers=config['layers'], input_dim=config['in_dim'],
@@ -95,7 +102,7 @@ def train_bilstm(config):
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
 
     for epoch in range(config['epochs']):
-        for inputs, targets in train_loader:
+        for inputs, targets in data_train:
             model.zero_grad()
 
             inputs, targets = inputs.float().to(device), targets.float().to(device)
@@ -112,7 +119,7 @@ def train_bilstm(config):
             torch.nn.utils.clip_grad_norm_(model.parameters(),
                                            max_norm=config['max_norm'])
 
-        mse, accuracy = eval_LSTM(model, test_loader, device)
+        mse, rmse, r2, accuracy, balanced_accuracy = eval_LSTM(model, data_test, device)
 
         if config['print']:
             if epoch % config['print_every'] == 0:
@@ -127,7 +134,7 @@ def train_bilstm(config):
         print(f'test mse: {mse}')
         print(f'accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
 def eval_LSTM(model, dataloader, device):
@@ -147,12 +154,12 @@ def eval_LSTM(model, dataloader, device):
         all_predictions.append(log_probs.flatten())
 
     all_targets, all_predictions = torch.cat(all_targets, dim=0), torch.cat(all_predictions, dim=0)
-    mse, accuracy = get_metrics(all_targets.cpu().detach().numpy(), all_predictions.cpu().detach().numpy())
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(all_targets.cpu().detach().numpy(), all_predictions.cpu().detach().numpy())
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
-def train_net(config):
+def train_net(config, fold):
     random.seed(config['seed'])
     np.random.seed(config['seed'])
     torch.manual_seed(config['seed'])
@@ -160,9 +167,12 @@ def train_net(config):
     # Initialize the device which to run the model on
     device = torch.device(config['device'])
 
+    # Extract the data
+    data_train, labels_train, data_test, labels_test = fold
+
     # Initialize the dataset and data loader
-    dataset_train = MOOD_loader(root=config['data_path'], train=True, shuffle=True)
-    dataset_test = MOOD_loader(root=config['data_path'], train=False)
+    dataset_train = MOOD_loader(data_train, labels_train, temporal=False)
+    dataset_test = MOOD_loader(data_test, labels_test, temporal=False)
     data_train = DataLoader(dataset_train, config['batch_size'])  # batch size=9 means exactly 3 batches per epoch
     data_test = DataLoader(dataset_test, config['batch_size'])
 
@@ -194,7 +204,7 @@ def train_net(config):
             torch.nn.utils.clip_grad_norm_(model.parameters(),
                                            max_norm=config['max_norm'])
 
-        mse, accuracy = eval_NN(model, data_test, device)
+        mse, rmse, r2, accuracy, balanced_accuracy = eval_NN(model, data_test, device)
 
         if config['print']:
             if epoch % config['print_every'] == 0:
@@ -209,7 +219,7 @@ def train_net(config):
         print(f'test mse: {mse}')
         print(f'accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
 def eval_NN(model, dataloader, device):
@@ -231,119 +241,101 @@ def eval_NN(model, dataloader, device):
 
 
     all_targets, all_predictions = torch.cat(all_targets, dim=0), torch.cat(all_predictions, dim=0)
-    mse, accuracy = get_metrics(all_targets.cpu().detach().numpy(), all_predictions.cpu().detach().numpy())
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(all_targets.cpu().detach().numpy(), all_predictions.cpu().detach().numpy())
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
-def train_linear(config):
-    random.seed(config['seed'])
-    data, labels = load_object(config['data_path'])
-    data_train, labels_train, data_test, labels_test = get_data(data, labels, split=0.8)
+def train_linear(config, fold):
+
+    data_train, labels_train, data_test, labels_test = fold
+    data_train, labels_train = np.concatenate(data_train, axis=0), np.concatenate(labels_train, axis=0)
+    data_test, labels_test = np.concatenate(data_test, axis=0), np.concatenate(labels_test, axis=0)
 
     model = linear_model.LinearRegression()
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)
 
-    mse, accuracy = get_metrics(labels_test, predictions)
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(labels_test, predictions)
 
     if config['print']:
         print(f'test mse: {mse}')
         print(f'test accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
-def train_svm(config):
-    random.seed(config['seed'])
-    data, labels = load_object(config['data_path'])
-    data_train, labels_train, data_test, labels_test = get_data(data, labels, split=0.8)
+def train_svm(config, fold):
+
+    data_train, labels_train, data_test, labels_test = fold
+    data_train, labels_train = np.concatenate(data_train, axis=0), np.concatenate(labels_train, axis=0)
+    data_test, labels_test = np.concatenate(data_test, axis=0), np.concatenate(labels_test, axis=0)
 
     model = SVR(max_iter=10000)
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)
 
-    mse, accuracy = get_metrics(labels_test, predictions)
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(labels_test, predictions)
 
     if config['print']:
         print(f'test mse: {mse}')
         print(f'test accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
-def train_random_forrest(config):
-    random.seed(config['seed'])
-    data, labels = load_object(config['data_path'])
-    data_train, labels_train, data_test, labels_test = get_data(data, labels, split=0.8)
+def train_random_forrest(config, fold):
 
-    model = RandomForestRegressor()
+    data_train, labels_train, data_test, labels_test = fold
+    data_train, labels_train = np.concatenate(data_train, axis=0), np.concatenate(labels_train, axis=0)
+    data_test, labels_test = np.concatenate(data_test, axis=0), np.concatenate(labels_test, axis=0)
+
+    model = RandomForestRegressor(n_estimators=1, max_depth=100)
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)
 
-    mse, accuracy = get_metrics(labels_test, predictions)
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(labels_test, predictions)
 
     if config['print']:
         print(f'test mse: {mse}')
         print(f'test accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
-def train_baseline(config):
-    random.seed(config['seed'])
-    data, labels = load_object(config['data_path'])
-    data_train, labels_train, data_test, labels_test = get_data(data, labels, split=0.8)
+def train_baseline(config, fold, folds_baseline):
 
-    # We need to set the seed again to make sure that the behavior is the same
-    random.seed(config['seed'])
+    _, _, _, labels_test = fold
+    labels_test = np.concatenate(labels_test, axis=0)
 
-    # We need to take the baseline targets and obtain the same split as the test data
-    baseline_targets = load_object(config['targets_path'])
-    random.shuffle(baseline_targets)
-    split = int(0.8 * len(baseline_targets))
-    baseline_targets_test = baseline_targets[split:]
+    _, baseline_test = folds_baseline
+    baseline_test = np.concatenate(baseline_test, axis=0)
 
-
-    # Now we convert it to a full set of targets
-    predictions = np.concatenate(baseline_targets_test, axis=0)
-
-    mse, accuracy = get_metrics(labels_test, predictions)
+    mse, rmse, r2, accuracy, balanced_accuracy = get_metrics(labels_test, baseline_test)
 
     if config['print']:
         print(f'test mse: {mse}')
         print(f'test accuracy: {accuracy}')
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
 
 def get_metrics(y_real, y_pred):
 
+    # Rgression metrics
     mse = mean_squared_error(y_real.astype('float32'), y_pred.astype('float32'))
+    rmse = mean_squared_error(y_real.astype('float32'), y_pred.astype('float32'), squared=False)
+    r2 = r2_score(y_real.astype('float32'), y_pred.astype('float32'))
+
+    # Classificationm metrics for interpretability
     accuracy = accuracy_score(np.around(y_real).astype('int'), np.around(y_pred).astype('int'))
+    balanced_accuracy = balanced_accuracy_score(np.around(y_real).astype('int'), np.around(y_pred).astype('int'))
 
-    return mse, accuracy
+    return mse, rmse, r2, accuracy, balanced_accuracy
 
-
-def get_data(data, targets, split=0.8, shuffle=True):
-
-    if shuffle:
-        temp = list(zip(data, targets))
-        random.shuffle(temp)
-        data, targets = zip(*temp)
-
-    split = int(split * len(data))
-
-    data_train, targets_train = data[:split], targets[:split]
-    data_test, targets_test = data[split:], targets[split:]
-
-    data_train, targets_train = np.concatenate(data_train, axis=0), np.concatenate(targets_train, axis=0)
-    data_test, targets_test = np.concatenate(data_test, axis=0), np.concatenate(targets_test, axis=0)
-
-    return data_train, targets_train, data_test, targets_test
 
 
 
