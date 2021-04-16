@@ -34,8 +34,9 @@ svm:
   print: True
 
 NN:
-  epochs: 5
-  lr: 0.001
+
+  epochs: 200
+  lr: 0.01
   momentum: 0.3
   batch_size: 32
   in_dim: 4  # 1641 49

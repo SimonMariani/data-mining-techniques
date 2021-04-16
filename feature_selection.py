@@ -2,10 +2,12 @@ from utils import load_object, save_object, get_folds
 import argparse
 import yaml
 import time
+import os
 from tsfresh.feature_extraction import extract_features, ComprehensiveFCParameters
 from main import get_config, run_model, run_test
 from tabulate import tabulate
 import warnings
+import pandas as pd
 
 
 def create_subsets(config):
@@ -31,10 +33,14 @@ def create_subsets(config):
     # We load the data
     data, labels = load_object(data_config['save_folder'] + '/processed_data_advanced_train.pkl')
     data_test, labels_test = load_object(data_config['save_folder'] + '/processed_data_advanced_test.pkl')
-    total_columns = len(data[0][0])"""
+    total_columns = len(data[0][0])
 
 
-    """for name, indices in zip(subset_names, subset_indices):
+    subset_names = ['m', 'pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma', 'pr_su_bf_ma_tsfp', 'pr_su_bf_ma_tsfp_tsfd']  #  , 'pr_su_bf_ma_tsfp_tsfd'
+    subset_indices = [(0,1), (0,4), (0,20), (0,43), (0,43+nmbr_ma), (0, 43+nmbr_ma+nmbr_tsfp), (0, total_columns)]  # , (43+nmbr_ma+nmbr_tsfp, total_columns)
+    
+    for name, indices in zip(subset_names, subset_indices):
+
         subset = []
 
         for i in range(len(data)):
@@ -86,6 +92,9 @@ def run_models(config, subset_names, subset_indices):
 
             if model in ['NN', 'LSTM', 'BiLSTM']:
                 temp_config['in_dim'] = indices[1]
+            if model == "NN":
+                if name in set(['pr_su_bf_ma_tsfp', 'pr_su_bf_ma_tsfp_tsfd']):
+                    temp_config['lr'] = 0.0001
 
             all_folds, all_folds_baseline = get_folds(temp_config)
 
@@ -116,6 +125,10 @@ def run_models(config, subset_names, subset_indices):
         # Print the results in a table
         table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['adj_r2_score'] + adj_r2s, ['accuracy'] + accuracies,
                  ['bal_accuracy'] + balanced_accuracies]
+        if not os.path.exists("results"):
+            os.makedirs("results")
+        pd.DataFrame(table, columns=["metrics"]+models).to_csv("results/results_" + name + ".csv")
+        #oke nice, dan kan ik nu helemaal overnieuw alles gaan runnen? Ja idd, en moet ook ff die wijziging van net terug draaien
 
         print('dataset: ' + name)
         print(tabulate(table, headers=['metrics'] + models, tablefmt="fancy_grid"))  # plain
