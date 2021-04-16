@@ -6,6 +6,7 @@ from tabulate import tabulate
 from utils import load_object, get_folds
 import numpy as np
 import warnings
+import pandas as pd
 
 def get_config(config):
 
@@ -49,6 +50,7 @@ def run(config):
     total_mse = [0 for i in range(len(models))]
     total_rmse = [0 for i in range(len(models))]
     total_r2 = [0 for i in range(len(models))]
+    total_adj_r2 = [0 for i in range(len(models))]
 
     total_accuracy = [0 for i in range(len(models))]
     total_balanced_accuracy = [0 for i in range(len(models))]
@@ -65,13 +67,14 @@ def run(config):
         for index, (fold, fold_base) in enumerate(zip(all_folds, all_folds_baseline)):
 
             if model == 'baseline':
-                mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
+                mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
             else:
-                mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
+                mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
 
             total_mse[i] += mse
             total_rmse[i] += rmse
             total_r2[i] += r2
+            total_adj_r2[i] += adj_r2
 
             total_accuracy[i] += accuracy
             total_balanced_accuracy[i] += balanced_accuracy
@@ -80,13 +83,14 @@ def run(config):
     mses = [mse / len(all_folds) for mse in total_mse]
     rmses = [rmse / len(all_folds) for rmse in total_rmse]
     r2s = [r2 / len(all_folds) for r2 in total_r2]
+    adj_r2s = [adj_r2 / len(all_folds) for adj_r2 in total_adj_r2]
 
     accuracies = [accuracy / len(all_folds) for accuracy in total_accuracy]
     balanced_accuracies = [balanced_accuracy / len(all_folds) for balanced_accuracy in total_balanced_accuracy]
 
     # Print the results in a table
-    table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['accuracy'] + accuracies,
-             ['bal_accuracy'] + balanced_accuracies]
+    table = [['mse'] + mses, ['root_mse'] + rmses, ['r2_score'] + r2s, ['adj_r2_score'] + adj_r2s,
+             ['accuracy'] + accuracies, ['bal_accuracy'] + balanced_accuracies]
 
     print(tabulate(table, headers=['metrics'] + models, tablefmt="fancy_grid"))  # plain
 
@@ -100,6 +104,7 @@ def run_test(config):
     total_mse = [0 for i in range(len(models))]
     total_rmse = [0 for i in range(len(models))]
     total_r2 = [0 for i in range(len(models))]
+    total_adj_r2 = [0 for i in range(len(models))]
 
     total_accuracy = [0 for i in range(len(models))]
     total_balanced_accuracy = [0 for i in range(len(models))]
@@ -122,21 +127,23 @@ def run_test(config):
         fold_base = [baseline_targets_train, baseline_targets_test]
 
         if model == 'baseline':
-            mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
+            mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold, fold_base)
         else:
-            mse, rmse, r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
+            mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = run_model(temp_config, fold)
 
         total_mse[i] += mse
         total_rmse[i] += rmse
         total_r2[i] += r2
+        total_adj_r2[i] += adj_r2
 
         total_accuracy[i] += accuracy
         total_balanced_accuracy[i] += balanced_accuracy
 
     # Print the results in a table
-    table = [['mse'] + total_mse, ['root_mse'] + total_rmse, ['r2_score'] + total_r2, ['accuracy'] + total_accuracy,
-             ['bal_accuracy'] + total_balanced_accuracy]
+    table = [['mse'] + total_mse, ['root_mse'] + total_rmse, ['r2_score'] + total_r2, ['adj_r2_score'] + total_adj_r2,
+             ['accuracy'] + total_accuracy, ['bal_accuracy'] + total_balanced_accuracy]
 
+    pd.DataFrame(table, columns=models).to_csv("final_results.csv")
     print(tabulate(table, headers=['metrics'] + models, tablefmt="fancy_grid"))  # plain
 
 

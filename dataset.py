@@ -106,8 +106,8 @@ def add_advanced_features(new_data, data, config):
 
     # Second we add complex statistics features
     new_data = moving_averages(new_data, window=5, variables=config['columns'])
-    new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
-    new_data = add_tsfresh_day(new_data, data, 'minimal', columns=config['columns'])
+    #new_data = add_tsfresh_participant(new_data, config['tsfresh_features'], columns=config['columns'], k=config['window'])
+    #new_data = add_tsfresh_day(new_data, data, 'minimal', columns=config['columns'])
 
     return new_data
 
@@ -197,6 +197,52 @@ def split_test(data, targets, seed, split=0.8):
 
         return data_train, targets_train, data_test, targets_test
 
+
+def save_subset(data_train, targets_train, data_test, targets_test, baseline_targets, config):
+
+    # Now we want to save all the data
+    if not os.path.exists(config['save_folder']):
+        os.makedirs(config['save_folder'])
+
+    # Now we inmediately divide the data into subsets
+    nmbr_columns = len(config['columns'])
+    total_columns = len(data_train[0].iloc[0])
+
+    # Some values that we need to determine until where the columns go
+    nmbr_ma = nmbr_columns * 3
+    nmbr_tsfp = nmbr_columns * 787  # note that this only works if you use the comprehensive tsfresh pack
+    subset_names = ['m', 'pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma']  # 'pr_su_bf_ma_tsfp' , 'pr_su_bf_ma_tsfp_tsfd'
+    subset_indices = [(0, 1), (0, 4), (0, 20), (0, 43),
+                      (0, 43 + nmbr_ma)]  # (0, 43 + nmbr_ma + nmbr_tsfp), (0, total_columns)
+
+    for name, indices in zip(subset_names, subset_indices):
+        subset = []
+
+        for i in range(len(data_train)):
+            subset.append(data_train[i].iloc[:, indices[0]: indices[1]])
+
+        subset_test = []
+        for j in range(len(data_test)):
+            subset_test.append(data_test[j].iloc[:, indices[0]: indices[1]])
+
+        save_data(subset, targets_train, config['save_folder'] + '/subdata_' + name + '.pkl')
+        save_data(subset_test, targets_test, config['save_folder'] + '/subdata_' + name + '_test.pkl')
+        save_pandas(subset, targets_train, config['save_folder'] + '/subdata_' + name + '.csv')
+
+
+    save_data(data_train, targets_train, filename=config['save_folder'] + '/processed_data_basic_train.pkl')
+    save_data(data_test, targets_test, filename=config['save_folder'] + '/processed_data_basic_test.pkl')
+
+    # Saves the data to a pandas file before saving it as a pickle object in a different format
+    if config['save_panda']:
+        save_pandas(data_train, targets_train, filename=config['save_folder'] + '/processed_data_pandas.csv')
+
+    # Now we do the same for the baseline targets
+    targets_train, targets_test = split_test(None, baseline_targets, seed=config['seed'], split=config['test_split'])
+    save_object(targets_train, filename=config['save_folder'] + '/baseline_targets_train.pkl')
+    save_object(targets_test, filename=config['save_folder'] + '/baseline_targets_test.pkl')
+
+
 class MOOD_loader(Dataset):
 
     def __init__(self, data, labels, temporal=False):
@@ -237,43 +283,21 @@ def get_data(config, path='./data_raw/dataset_mood_smartphone.csv'):
     # For the temporal and feature model we add different features and therefore we also need to
     # take care of the imputation and normalization in a different manner
     new_data = add_basic_features(new_data, data, config)
-    new_data_advanced = add_advanced_features(copy.deepcopy(new_data), data, config)
+    new_data = add_advanced_features(new_data, data, config)
 
     new_data = impute(new_data)
-    new_data_advanced = impute(new_data_advanced)
 
     # This can be done before only ones but because we want to reset the index and such it is easier to do it here
     new_data, targets, baseline_targets = get_labels(new_data)
     baseline_targets = [target.to_numpy().squeeze(axis=1) for target in baseline_targets]
-    new_data_advanced, _, _ = get_labels(new_data_advanced)
 
-    new_data = normalize(new_data, standard=config['standard'], exclude=config['exclude_norm'])
-    new_data_advanced = normalize(new_data_advanced, standard=config['standard'], exclude=config['exclude_norm'])
-
-    # Now we want to save all the data
-    if not os.path.exists(config['save_folder']):
-        os.makedirs(config['save_folder'])
+    if config['normalize']:
+        new_data = normalize(new_data, standard=config['standard'], exclude=config['exclude_norm'])
 
     data_train, targets_train, data_test, targets_test = split_test(new_data, targets, seed=config['seed'],
                                                                     split=config['test_split'])
 
-    save_data(data_train, targets_train, filename=config['save_folder'] + '/processed_data_basic_train.pkl')
-    save_data(data_test, targets_test, filename=config['save_folder'] + '/processed_data_basic_test.pkl')
-
-
-    data_train, targets_train, data_test, targets_test = split_test(new_data_advanced, targets, seed=config['seed'],
-                                                                    split=config['test_split'])
-
-    save_data(data_train, targets_train, filename=config['save_folder'] + '/processed_data_advanced_train.pkl')
-    save_data(data_test, targets_test, filename=config['save_folder'] + '/processed_data_advanced_test.pkl')
-
-    # Saves the data to a pandas file before saving it as a pickle object in a different format
-    if config['save_panda']:
-        save_pandas(data_train, targets_train, filename=config['save_folder'] + '/processed_data_pandas.csv')
-
-    targets_train, targets_test = split_test(None, baseline_targets, seed=config['seed'], split=config['test_split'])
-    save_object(targets_train, filename=config['save_folder'] + '/baseline_targets_train.pkl')
-    save_object(targets_test, filename=config['save_folder'] + '/baseline_targets_test.pkl')
+    save_subset(data_train, targets_train, data_test, targets_test, baseline_targets, config)
 
 
 if __name__ == "__main__":

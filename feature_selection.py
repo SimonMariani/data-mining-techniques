@@ -18,7 +18,7 @@ def create_subsets(config):
     tsfd: tsfresh day (nmbr_of features)
     """
 
-    # We need the data config to extract certain properties of the data
+    """# We need the data config to extract certain properties of the data
     data_config = {**config['dataset']}
 
     # The number of columns that we used to extract features
@@ -30,17 +30,35 @@ def create_subsets(config):
 
     # We load the data
     data, labels = load_object(data_config['save_folder'] + '/processed_data_advanced_train.pkl')
-    total_columns = len(data[0][0])
+    data_test, labels_test = load_object(data_config['save_folder'] + '/processed_data_advanced_test.pkl')
+    total_columns = len(data[0][0])"""
 
-    subset_names = ['m', 'pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma', 'pr_su_bf_ma_tsfp', 'pr_su_bf_ma_tsfp_tsfd']  #  , 'pr_su_bf_ma_tsfp_tsfd'
-    subset_indices = [(0,1), (0,4), (0,20), (0,43), (0,43+nmbr_ma), (0, 43+nmbr_ma+nmbr_tsfp), (43+nmbr_ma+nmbr_tsfp, total_columns)]  # , (43+nmbr_ma+nmbr_tsfp, total_columns)
 
-    for name, indices in zip(subset_names, subset_indices):
+    """for name, indices in zip(subset_names, subset_indices):
         subset = []
+
         for i in range(len(data)):
             subset.append(data[i][:, indices[0] : indices[1]])
 
+        subset_test = []
+        for j in range(len(data_test)):
+            subset_test.append(data_test[j][:, indices[0] : indices[1]])
+
         save_object((subset, labels), data_config['save_folder'] + '/subdata_' + name + '.pkl')
+        save_object((subset_test, labels_test), data_config['save_folder'] + '/subdata_' + name + '_test.pkl')"""
+
+    data_config = {**config['dataset']}
+
+    # The number of columns that we used to extract features
+    nmbr_columns = len(data_config['columns'])
+
+    # Some values that we need to determine until where the columns go
+    nmbr_ma = nmbr_columns * 3
+    nmbr_tsfp = nmbr_columns * 787  # note that this only works if you use the comprehensive tsfresh pack
+
+    subset_names = ['m', 'pr', 'pr_su', 'pr_su_bf', 'pr_su_bf_ma']  # 'pr_su_bf_ma_tsfp' , 'pr_su_bf_ma_tsfp_tsfd'
+    subset_indices = [(0, 1), (0, 4), (0, 20), (0, 43),
+                      (0, 43 + nmbr_ma)]  # (0, 43 + nmbr_ma + nmbr_tsfp), (0, total_columns)
 
     run_models(config, subset_names, subset_indices)
 

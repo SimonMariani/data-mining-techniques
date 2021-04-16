@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from models import Basic_LSTM, Basic_BiLSTM, Basic_Net
 from sklearn import linear_model
+from sklearn.linear_model import Lasso
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, accuracy_score, balanced_accuracy_score, r2_score
 from sklearn.ensemble import RandomForestRegressor
@@ -36,8 +37,9 @@ def train_lstm(config, fold):
 
     # Setup the loss and optimizer
     criterion = torch.nn.MSELoss()
-    #optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr']) #, weight_decay=0.1
+    #optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.5, last_epoch=-1)
 
     # Some eraly stopping parameters for if early stopping is enabled
     val_len = config['val_len']
@@ -78,6 +80,9 @@ def train_lstm(config, fold):
                 print(f'test mse: {mse}')
                 print(f'accuracy: {accuracy}')
                 print('\n')
+
+        # Update scheduler
+        scheduler.step(epoch)
 
     return mse, rmse, r2, adj_r2, accuracy, balanced_accuracy
 
@@ -199,7 +204,7 @@ def train_net(config, fold):
 
     # Setup the loss and optimizer
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'], weight_decay=0.1)
 
     # Some eraly stopping parameters for if early stopping is enabled
     val_len = config['val_len']
@@ -277,6 +282,7 @@ def train_linear(config, fold):
     data_test, labels_test = np.concatenate(data_test, axis=0), np.concatenate(labels_test, axis=0)
 
     model = linear_model.LinearRegression()
+    #model = Lasso()
 
     model.fit(data_train, labels_train)
     predictions = model.predict(data_test)
@@ -348,6 +354,26 @@ def train_baseline(config, fold, folds_baseline):
         print(f'test accuracy: {accuracy}')
 
     return mse, rmse, r2, adj_r2, accuracy, balanced_accuracy
+
+"""def train_baseline(config, fold, folds_baseline):
+
+    data_train, _, _, labels_test = fold
+    total_num_cols = data_train[0].shape[1]
+    labels_test = np.concatenate(labels_test, axis=0)
+
+    _, baseline_test = folds_baseline
+
+    baseline_test = np.concatenate(baseline_test, axis=0)
+    baseline_test = np.full_like(baseline_test, fill_value=np.mean(baseline_test))
+    baseline_test = np.full_like(baseline_test, fill_value=6.973108494)
+
+    mse, rmse, r2, adj_r2, accuracy, balanced_accuracy = get_metrics(labels_test, baseline_test, total_num_cols)
+
+    if config['print']:
+        print(f'test mse: {mse}')
+        print(f'test accuracy: {accuracy}')
+
+    return mse, rmse, r2, adj_r2, accuracy, balanced_accuracy"""
 
 
 def get_metrics(y_real, y_pred, total_num_cols):

@@ -1,94 +1,94 @@
 models: ['baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM']  # 'baseline', 'linear', 'svm', 'random_forest', 'NN', 'LSTM', 'BiLSTM'
 nmbr_of_runs: 1
-test_only: False  # this one overwrites test
+test_only: True # this one overwrites test
 test: False
-print: False
+print: True
 
 baseline:
-  data_path: './data_processed/processed_data_advanced_train.pkl'
-  test_path: './data_processed/processed_data_advanced_test.pkl'
+  data_path: './data_processed/processed_data_basic_train.pkl'
+  test_path: './data_processed/subdata_pr_test.pkl'  #'./data_processed/processed_data_advanced_test.pkl'
   targets_path: './data_processed/baseline_targets_test.pkl'
-  n_splits: 20
+  n_splits: 5
   seed: 4
   print: True
 
 random_forest:
-  data_path: './data_processed/processed_data_advanced_train.pkl'
-  test_path: './data_processed/processed_data_advanced_test.pkl'
+  data_path: './data_processed/subdata_pr.pkl'#'./data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_advanced_test.pkl'
   n_splits: 20
   seed: 4
   print: True
 
 linear:
-  data_path: './data_processed/processed_data_advanced_train.pkl'
-  test_path: './data_processed/processed_data_advanced_test.pkl'
+  data_path: './data_processed/subdata_pr.pkl'#'./data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_advanced_test.pkl'
   n_splits: 20
   seed: 4
   print: True
 
 svm:
-  data_path: './data_processed/processed_data_advanced_train.pkl'
-  test_path: './data_processed/processed_data_advanced_test.pkl'
+  data_path: './data_processed/subdata_pr.pkl'#'./data_processed/processed_data_advanced_train.pkl'#
+  test_path: './data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_advanced_test.pkl'
   n_splits: 20
   seed: 4
   print: True
 
 NN:
-  epochs: 200
-  lr: 0.0001
+  epochs: 5
+  lr: 0.001
   momentum: 0.3
   batch_size: 32
-  in_dim: 1641
+  in_dim: 4  # 1641 49
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_advanced_train.pkl'
-  test_path: './data_processed/processed_data_advanced_test.pkl'
-  n_splits: 20
-  print_every: 10
+  data_path: './data_processed/subdata_pr.pkl'#'./data_processed/processed_data_advanced_train.pkl' # './data_processed/subdata_pr_su_bf_ma.pkl' './data_processed/processed_data_advanced_train.pkl'
+  test_path: './data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_advanced_test.pkl'
+  n_splits: 5
+  print_every: 5
   print: True
-  early_stopping: True
+  early_stopping: False
   val_len: 20
 
 LSTM:
-  epochs: 200
-  lr: 0.01
-  momentum: 0.0
+  epochs: 5
+  lr: 0.1
+  momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
-  hidden: 128
+  hidden: 126
   layers: 2
-  in_dim: 43
+  in_dim: 1 # 4  # 43
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_basic_train.pkl'
-  test_path: './data_processed/processed_data_basic_test.pkl'
-  n_splits: 20
+  data_path: './data_processed/subdata_m.pkl'#'./data_processed/subdata_pr.pkl'#'./data_processed/processed_data_basic_train.pkl'
+  test_path: './data_processed/subdata_m_test.pkl'#'./data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_basic_test.pkl'
+  n_splits: 5
   print_every: 10
   print: True
-  early_stopping: True
-  val_len: 20
+  early_stopping: False
+  val_len: 5
 
 BiLSTM:
-  epochs: 200
+  epochs: 5
   lr: 0.05
   momentum: 0.5
   batch_size: 1  # This needs to be 1 because of the variable sequence lengths
   hidden: 64
   layers: 2
-  in_dim: 43
+  in_dim: 4  # 43
   out_dim: 1
   max_norm: 5
   device: 'cuda'  # cuda, cpu
   seed: 4
-  data_path: './data_processed/processed_data_basic_train.pkl'
-  test_path: './data_processed/processed_data_basic_test.pkl'
+  data_path: './data_processed/subdata_pr.pkl'#'./data_processed/subdata_pr.pkl'   #'./data_processed/processed_data_basic_train.pkl'
+  test_path: './data_processed/subdata_pr_test.pkl'#'./data_processed/processed_data_basic_test.pkl'
   n_splits: 20
   print_every: 50
   print: True
-  early_stopping: True
+  early_stopping: False
   val_len: 20
 
 dataset:
@@ -100,6 +100,7 @@ dataset:
   window: 5
   tsfresh_features: 'comprehensive'  # 'minimal', 'efficient', 'comprehensive'
   columns: ['mood', 'circumplex.valence']
+  normalize: True
   standard: True
   exclude_norm: ['Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'April',
                  'February', 'March', 'May', 'June']

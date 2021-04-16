@@ -45,13 +45,27 @@ class Basic_BiLSTM(nn.Module):
 
 class Basic_Net(nn.Module):
 
-    def __init__(self, input_dim=38, output_dim=1):
+    def __init__(self, input_dim=38, output_dim=1, p=0.1):
         super(Basic_Net, self).__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 8, ),
+            #nn.Dropout(p),
             nn.ReLU(),
-            nn.Linear(64, output_dim),
+            nn.Linear(8, 16),
+            #nn.Dropout(p),
+            nn.ReLU(),
+            nn.Linear(16, 32),
+            #nn.Dropout(p),
+            nn.ReLU(),
+            nn.Linear(32, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, output_dim)
+
         )
 
     def forward(self, x):
